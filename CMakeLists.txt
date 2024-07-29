@@ -1,0 +1,46 @@
+﻿# Copyright 2024 Yonggang Luo
+# SPDX-License-Identifier: MIT
+if ("${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
+  cmake_minimum_required(VERSION 3.17)
+  project(win-polyfill-export VERSION 0.1.0.0 LANGUAGES C CXX)
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+  set(CMAKE_CXX_STANDARD 23)
+  string(APPEND CMAKE_CXX_FLAGS " -wd4312 -wd4311")
+
+  if ("${CMAKE_MSVC_RUNTIME_LIBRARY}" STREQUAL "")
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  endif()
+endif()
+
+add_compile_options("/EHa" "/execution-charset:utf-8" "-DUNICODE" "-D_UNICODE")
+string(REPLACE "/RTC1" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+string(REPLACE "/INCREMENTAL" "" CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS_DEBUG}")
+string(REPLACE "/INCREMENTAL" "" CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+
+add_library(win-polyfill-deps INTERFACE)
+set(WIN_POLYFILL_DEPS_INCLUDES
+  ${CMAKE_CURRENT_LIST_DIR}/src/deps/phnt
+  ${CMAKE_CURRENT_LIST_DIR}/src/deps/
+  ${CMAKE_CURRENT_LIST_DIR}/src/
+  ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/
+)
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  list(APPEND WIN_POLYFILL_DEPS_INCLUDES ${CMAKE_CURRENT_LIST_DIR}/gens/x64)
+else()
+  list(APPEND WIN_POLYFILL_DEPS_INCLUDES ${CMAKE_CURRENT_LIST_DIR}/gens/x86)
+endif()
+set_target_properties(win-polyfill-deps PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${WIN_POLYFILL_DEPS_INCLUDES}")
+
+add_subdirectory(src)
+
+if ("${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
+  include(cmake/CpkHelpers.cmake)
+  if(BUILD_TESTING)
+    include(CTest)
+    enable_testing()
+    # add_subdirectory(tests)
+  endif()
+endif()

@@ -1,0 +1,3 @@
+DEFINE_THUNK(d3d9, Direct3DCreate9Ex)
+DEFINE_THUNK(d3d9, Direct3DCreate9On12)
+DEFINE_THUNK(d3d9, Direct3DCreate9On12Ex)

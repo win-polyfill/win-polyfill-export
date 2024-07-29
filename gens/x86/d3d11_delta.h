@@ -1,0 +1,5 @@
+DEFINE_THUNK(d3d11, CreateDirect3D11DeviceFromDXGIDevice)
+DEFINE_THUNK(d3d11, CreateDirect3D11SurfaceFromDXGISurface)
+DEFINE_THUNK(d3d11, D3D11CreateDevice)
+DEFINE_THUNK(d3d11, D3D11CreateDeviceAndSwapChain)
+DEFINE_THUNK(d3d11, D3D11On12CreateDevice)

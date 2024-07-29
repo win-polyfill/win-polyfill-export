@@ -1,0 +1,7 @@
+node_modules
+/exports
+/build
+/docs/win32-api-merged*
+/docs/*.zip
+/docs/gens
+/docs/cache

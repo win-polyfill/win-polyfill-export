@@ -1,0 +1,8 @@
+DEFINE_THUNK(psapi, EnumPageFilesA)
+DEFINE_THUNK(psapi, EnumPageFilesW)
+DEFINE_THUNK(psapi, EnumProcessModulesEx)
+DEFINE_THUNK(psapi, GetPerformanceInfo)
+DEFINE_THUNK(psapi, GetProcessImageFileNameA)
+DEFINE_THUNK(psapi, GetProcessImageFileNameW)
+DEFINE_THUNK(psapi, GetWsChangesEx)
+DEFINE_THUNK(psapi, QueryWorkingSetEx)

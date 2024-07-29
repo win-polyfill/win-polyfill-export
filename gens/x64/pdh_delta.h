@@ -1,0 +1,6 @@
+DEFINE_THUNK(pdh, DllInstall)
+DEFINE_THUNK(pdh, PdhAddEnglishCounterA)
+DEFINE_THUNK(pdh, PdhAddEnglishCounterW)
+DEFINE_THUNK(pdh, PdhCollectQueryDataWithTime)
+DEFINE_THUNK(pdh, PdhValidatePathExA)
+DEFINE_THUNK(pdh, PdhValidatePathExW)

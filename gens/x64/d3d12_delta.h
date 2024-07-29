@@ -1,0 +1,8 @@
+DEFINE_THUNK(d3d12, D3D12CreateDevice)
+DEFINE_THUNK(d3d12, D3D12CreateRootSignatureDeserializer)
+DEFINE_THUNK(d3d12, D3D12CreateVersionedRootSignatureDeserializer)
+DEFINE_THUNK(d3d12, D3D12EnableExperimentalFeatures)
+DEFINE_THUNK(d3d12, D3D12GetDebugInterface)
+DEFINE_THUNK(d3d12, D3D12GetInterface)
+DEFINE_THUNK(d3d12, D3D12SerializeRootSignature)
+DEFINE_THUNK(d3d12, D3D12SerializeVersionedRootSignature)

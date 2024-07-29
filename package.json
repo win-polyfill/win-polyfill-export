@@ -1,0 +1,16 @@
+{
+  "name": "win-polyfill",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/win-polyfill/win-polyfill.git",
+  "author": "Yonggang Luo <luoyonggang@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@esutils/process": "^0.0.2",
+    "@types/node": "^20.8.10",
+    "mnemonist": "^0.39.8",
+    "suffixtree": "^0.0.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  }
+}

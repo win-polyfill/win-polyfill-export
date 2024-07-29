@@ -1,0 +1,38 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "sufix-array-debug",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/x64-pc-windows-msvc-17-debug/bin/win-polyfill-export-gen-sa.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/",
+      "environment": [],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "sufix-array-release",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/x64-pc-windows-msvc-17-release/bin/win-polyfill-export-gen-sa.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/",
+      "environment": [],
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "name": "debug gen-thunks.ts",
+      "request": "launch",
+      "args": [],
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "program": "c:\\work\\study\\runtimes\\win-polyfill-export\\scripts\\gen-thunks.ts"
+    }
+  ]
+}
