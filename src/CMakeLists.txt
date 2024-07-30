@@ -28,4 +28,4 @@ target_link_options(one-core-linker PRIVATE
 
 add_executable(gen-exports gen-exports.cpp gen-exports-api.cpp)
 target_link_libraries(gen-exports win-polyfill-deps)
-target_compile_options(gen-exports PRIVATE -Oi-)
+target_compile_options(gen-exports PRIVATE -Oi- -bigobj)

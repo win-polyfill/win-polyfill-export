@@ -1,4 +1,3 @@
-DEFINE_THUNK(pdh, DllInstall)
 DEFINE_THUNK(pdh, PdhAddEnglishCounterA)
 DEFINE_THUNK(pdh, PdhAddEnglishCounterW)
 DEFINE_THUNK(pdh, PdhCollectQueryDataWithTime)

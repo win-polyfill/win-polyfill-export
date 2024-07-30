@@ -5,6 +5,10 @@
 #define _CTYPE_DISABLE_MACROS
 #define _CRT_SECURE_CPP_OVERLOAD_SECURE_NAMES 0
 
+#define WINBASE_DECLARE_RESTORE_LAST_ERROR
+#define FE_IME
+#define WINNT
+
 #include <math.h>
 #include <sal.h>
 #include <stdint.h>
@@ -21,7 +25,31 @@ typedef NTSTATUS *PNTSTATUS;
 #define _NTRTL_FWD_H
 #include "win-polyfill-core/nt.h"
 
+#include <aclapi.h>
+#include <appmgmt.h>
+#include <appmodel.h>
+#include <errhandlingapi.h>
+#include <evntcons.h>
+#include <ime.h>
+#include <lmserver.h>
+#include <memoryapi.h>
+#include <msacmdlg.h>
+#include <ncrypt.h>
+#include <olectl.h>
+#include <oobenotification.h>
+#include <perflib.h>
+#include <processsnapshot.h>
+#include <sddl.h>
+#include <tlhelp32.h>
+#include <wct.h>
+#include <wincred.h>
+#include <windowsceip.h>
+#include <winnls32.h>
+#include <winsafer.h>
+
 #include "gen-exports-api.h"
+
+#include "gen-exports-fixes.h"
 
 #if defined(__GNUC__) || defined(__clang__)
 #define CC_CDECL __attribute__((cdecl))
@@ -193,6 +221,11 @@ void gen_functions()
 #endif
 
 #include "ntdll_full.h"
+#include "kernel32_full.h"
+
+#include "user32_full.h"
+#include "shell32_full.h"
+#include "advapi32_full.h"
 
 #undef DEFINE_THUNK
 }

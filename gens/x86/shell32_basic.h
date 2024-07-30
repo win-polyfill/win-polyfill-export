@@ -1,8 +1,4 @@
 DEFINE_THUNK(shell32, CommandLineToArgvW)
-DEFINE_THUNK(shell32, DllCanUnloadNow)
-DEFINE_THUNK(shell32, DllGetVersion)
-DEFINE_THUNK(shell32, DllInstall)
-DEFINE_THUNK(shell32, DllUnregisterServer)
 DEFINE_THUNK(shell32, DoEnvironmentSubstA)
 DEFINE_THUNK(shell32, DoEnvironmentSubstW)
 DEFINE_THUNK(shell32, DragAcceptFiles)

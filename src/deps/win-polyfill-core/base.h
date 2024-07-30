@@ -31,6 +31,7 @@
 /* for pathcch.h */
 #define PATHCCH_NO_DEPRECATE
 
+#include <bcrypt.h>
 #include <bluetoothleapis.h>
 #include <cfgmgr32.h>
 #include <d3d11.h>
@@ -44,9 +45,11 @@
 #include <esent.h>
 #include <evntprov.h>
 #include <evntrace.h>
+#include <ip2string.h>
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
+#include <mschapp.h>
 #include <ncrypt.h>
 #include <ndfapi.h>
 #include <pathcch.h>
@@ -73,10 +76,7 @@
 #include <winhttp.h>
 #include <winnls.h>
 #include <winstring.h>
-#include <bcrypt.h>
 #include <winusb.h>
-#include <ip2string.h>
-
 #ifdef __cplusplus
 #include <dwrite.h>
 #include <dwrite_3.h>

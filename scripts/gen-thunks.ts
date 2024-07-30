@@ -28,6 +28,61 @@ const ApisToIgnore = [
   "RtlpTimeFieldsToTime",
   "RtlpTimeToTimeFields",
   "EtwEnumerateTraceGuids",
+  "DllGetVersion",
+
+  // TODO not ending with space
+  "OpenState",
+  "HeapExtend",
+  "PssWalkMarkerSeek",
+  "DrawFrame",
+
+  // DLL apis present in all DLLs
+  "DllGetClassObject",
+  "DllCanUnloadNow",
+  "DllInstall",
+  "DllRegisterServer",
+  "DllUnregisterServer",
+
+  // TODO: redirection
+  "K32EmptyWorkingSet",
+  "K32EnumDeviceDrivers",
+  "K32EnumPageFilesA",
+  "K32EnumPageFilesW",
+  "K32EnumProcessModules",
+  "K32EnumProcessModulesEx",
+  "K32EnumProcesses",
+  "K32GetDeviceDriverBaseNameA",
+  "K32GetDeviceDriverBaseNameW",
+  "K32GetDeviceDriverFileNameA",
+  "K32GetDeviceDriverFileNameW",
+  "K32GetMappedFileNameA",
+  "K32GetMappedFileNameW",
+  "K32GetModuleBaseNameA",
+  "K32GetModuleBaseNameW",
+  "K32GetModuleFileNameExA",
+  "K32GetModuleFileNameExW",
+  "K32GetModuleInformation",
+  "K32GetPerformanceInfo",
+  "K32GetProcessImageFileNameA",
+  "K32GetProcessImageFileNameW",
+  "K32GetProcessMemoryInfo",
+  "K32GetWsChanges",
+  "K32GetWsChangesEx",
+  "K32InitializeProcessForWsWatch",
+  "K32QueryWorkingSet",
+  "K32QueryWorkingSetEx",
+
+  "ResolveDelayLoadedAPI",
+  "ResolveDelayLoadsFromDll",
+
+  // fake exported
+  "InjectKeyboardInput",
+  "InjectMouseInput",
+
+  //banned functions
+  "StrNCpyA",
+  "StrNCpyW",
+  "CDefFolderMenu_Create",
 ];
 
 const ExportData = [
@@ -72,6 +127,17 @@ const VaArgApis = [
   "wcspbrk",
   "wcsrchr",
   "wcsstr",
+
+  // advapi32 vaarg
+  'TraceMessage',
+
+  // shell32 vaarg
+  'ShellMessageBoxA',
+  'ShellMessageBoxW',
+
+  // user32 vaarg
+  'wsprintfA',
+  'wsprintfW',
 ];
 
 const FunctionPrefixTable: number[] = [];
@@ -107,7 +173,8 @@ async function exportFiles(
   gensDir: string,
   filesExports: string[],
   sa: SuffixArrayLoaded,
-  keysToIgnore: Set<string>
+  keysToIgnore: Set<string>,
+  keysToPushPop: string[],
 ) {
   let funcMap = new Map<string, number>();
   let fileCount = 0;
@@ -169,6 +236,7 @@ async function exportFiles(
       } else {
         KeysDelta.push(`${define_thunks}(${dllname}, ${key})`);
       }
+      keysToPushPop.push(key)
     }
     keysToIgnore.add(key);
   }
@@ -226,7 +294,11 @@ export async function genWin32Headers() {
 const DllNameList = [
   "ntdll",
   "kernel32",
+
+  "user32",
+  "shell32",
   "advapi32",
+
   "cfgmgr32",
   "crypt32",
   "dbghelp",
@@ -239,9 +311,7 @@ const DllNameList = [
   "powrprof",
   "psapi",
   "setupapi",
-  "shell32",
   "shlwapi",
-  "user32",
   "userenv",
   "version",
   "winhttp",
@@ -277,9 +347,22 @@ async function MergeFile(sa: SuffixArrayLoaded, arch: "x86" | "x64") {
   let docsDirArch = path.join(docsDir, "gens", arch);
   let filesExports = await getFiles(docsDirArch);
   let gensDir = path.join(baseDir, "gens", arch);
+  let keysToPushPop: string[] = []
   for (let name of DllNameList) {
-    await exportFiles(name, gensDir, filesExports, sa, keysToIgnore);
+    await exportFiles(name, gensDir, filesExports, sa, keysToIgnore, keysToPushPop);
   }
+  let push_path = path.join(gensDir, `win32_api_push.h`);
+  if (false)
+    await fs.writeFile(
+      push_path,
+      keysToPushPop.map((x)=> `#define ${x} ${x}_none` ).join("\r\n")
+    );
+  else
+    await fs.rm(push_path, {force: true})
+  await fs.writeFile(
+    path.join(gensDir, `win32_api_pop.h`),
+    keysToPushPop.map((x)=> `#undef ${x}` ).join("\r\n")
+  );
 }
 
 // await genWin32Headers();
