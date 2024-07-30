@@ -5809,12 +5809,6 @@
 #undef SymUnloadModule64
 #undef UnDecorateSymbolName
 #undef UnDecorateSymbolNameW
-#undef block
-#undef dbghelp
-#undef dh
-#undef lm
-#undef sym
-#undef symsrv
 #undef JetAddColumn
 #undef JetAddColumnA
 #undef JetAddColumnW

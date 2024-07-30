@@ -5760,12 +5760,6 @@
 #undef UnDecorateSymbolName
 #undef UnDecorateSymbolNameW
 #undef UnmapDebugInformation
-#undef block
-#undef dbghelp
-#undef dh
-#undef lm
-#undef sym
-#undef symsrv
 #undef JetAddColumn
 #undef JetAddColumnA
 #undef JetAddColumnW

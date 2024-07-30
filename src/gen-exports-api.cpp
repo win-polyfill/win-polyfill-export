@@ -1,13 +1,14 @@
 #define _CRT_FUNCTIONS_REQUIRED 1
 #define _STL_COMPILER_PREPROCESSOR 1
 #define _NO_CRT_STDIO_INLINE
-#define DECLSPEC_NORETURN
 #define _CTYPE_DISABLE_MACROS
 #define _CRT_SECURE_CPP_OVERLOAD_SECURE_NAMES 0
 
+#define DECLSPEC_NORETURN
 #define WINBASE_DECLARE_RESTORE_LAST_ERROR
 #define FE_IME
 #define WINNT
+#define _IMAGEHLP_SOURCE_
 
 #include <math.h>
 #include <sal.h>
@@ -46,6 +47,10 @@ typedef NTSTATUS *PNTSTATUS;
 #include <windowsceip.h>
 #include <winnls32.h>
 #include <winsafer.h>
+#include <devquery.h>
+#include <swdevice.h>
+#include <mssip.h>
+#include <i_cryptasn1tls.h>
 
 #include "gen-exports-api.h"
 
@@ -226,6 +231,9 @@ void gen_functions()
 #include "user32_full.h"
 #include "shell32_full.h"
 #include "advapi32_full.h"
+#include "cfgmgr32_full.h"
+#include "crypt32_full.h"
+#include "dbghelp_full.h"
 
 #undef DEFINE_THUNK
 }

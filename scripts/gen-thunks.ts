@@ -83,6 +83,14 @@ const ApisToIgnore = [
   "StrNCpyA",
   "StrNCpyW",
   "CDefFolderMenu_Create",
+
+  // dbghelp no function decls
+  "dbghelp",
+  "dh",
+  "sym",
+  "symsrv",
+  "block",
+  "lm",
 ];
 
 const ExportData = [
@@ -129,15 +137,15 @@ const VaArgApis = [
   "wcsstr",
 
   // advapi32 vaarg
-  'TraceMessage',
+  "TraceMessage",
 
   // shell32 vaarg
-  'ShellMessageBoxA',
-  'ShellMessageBoxW',
+  "ShellMessageBoxA",
+  "ShellMessageBoxW",
 
   // user32 vaarg
-  'wsprintfA',
-  'wsprintfW',
+  "wsprintfA",
+  "wsprintfW",
 ];
 
 const FunctionPrefixTable: number[] = [];
@@ -174,7 +182,7 @@ async function exportFiles(
   filesExports: string[],
   sa: SuffixArrayLoaded,
   keysToIgnore: Set<string>,
-  keysToPushPop: string[],
+  keysToPushPop: string[]
 ) {
   let funcMap = new Map<string, number>();
   let fileCount = 0;
@@ -236,7 +244,7 @@ async function exportFiles(
       } else {
         KeysDelta.push(`${define_thunks}(${dllname}, ${key})`);
       }
-      keysToPushPop.push(key)
+      keysToPushPop.push(key);
     }
     keysToIgnore.add(key);
   }
@@ -298,10 +306,10 @@ const DllNameList = [
   "user32",
   "shell32",
   "advapi32",
-
   "cfgmgr32",
   "crypt32",
   "dbghelp",
+
   "esent",
   "gdi32",
   "iphlpapi",
@@ -347,21 +355,27 @@ async function MergeFile(sa: SuffixArrayLoaded, arch: "x86" | "x64") {
   let docsDirArch = path.join(docsDir, "gens", arch);
   let filesExports = await getFiles(docsDirArch);
   let gensDir = path.join(baseDir, "gens", arch);
-  let keysToPushPop: string[] = []
+  let keysToPushPop: string[] = [];
   for (let name of DllNameList) {
-    await exportFiles(name, gensDir, filesExports, sa, keysToIgnore, keysToPushPop);
+    await exportFiles(
+      name,
+      gensDir,
+      filesExports,
+      sa,
+      keysToIgnore,
+      keysToPushPop
+    );
   }
   let push_path = path.join(gensDir, `win32_api_push.h`);
   if (false)
     await fs.writeFile(
       push_path,
-      keysToPushPop.map((x)=> `#define ${x} ${x}_none` ).join("\r\n")
+      keysToPushPop.map((x) => `#define ${x} ${x}_none`).join("\r\n")
     );
-  else
-    await fs.rm(push_path, {force: true})
+  else await fs.rm(push_path, { force: true });
   await fs.writeFile(
     path.join(gensDir, `win32_api_pop.h`),
-    keysToPushPop.map((x)=> `#undef ${x}` ).join("\r\n")
+    keysToPushPop.map((x) => `#undef ${x}`).join("\r\n")
   );
 }
 
