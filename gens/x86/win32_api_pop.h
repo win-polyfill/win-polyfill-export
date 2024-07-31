@@ -7531,8 +7531,6 @@
 #undef PdhGetRawCounterArrayW
 #undef PdhGetRawCounterValue
 #undef PdhIsRealTimeQuery
-#undef PdhLogServiceControlA
-#undef PdhLogServiceControlW
 #undef PdhLookupPerfIndexByNameA
 #undef PdhLookupPerfIndexByNameW
 #undef PdhLookupPerfNameByIndexA

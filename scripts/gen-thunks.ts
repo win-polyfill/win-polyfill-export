@@ -116,6 +116,10 @@ const ApisToIgnore = [
   // gdi32 suffix
   "GetNumberOfPhysicalMonitors",
   "GetPhysicalMonitors",
+
+  // pdh suffix
+  "PdhLogServiceControlA",
+  "PdhLogServiceControlW",
 ];
 
 const ExportData = [
@@ -338,8 +342,8 @@ const DllNameList = [
   "gdi32",
   "iphlpapi",
   "netapi32",
-
   "ole32",
+
   "pdh",
   "powrprof",
   "psapi",

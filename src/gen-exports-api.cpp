@@ -291,7 +291,44 @@ void gen_functions()
 #include "iphlpapi_full.h"
 #include "netapi32_full.h"
 #include "ole32_full.h"
+#include "pdh_full.h"
 
+#if 0
+
+  "pdh",
+  "powrprof",
+  "psapi",
+  "setupapi",
+  "shlwapi",
+  "userenv",
+  "version",
+  "winhttp",
+  "ws2_32",
+
+  // Not present on Windows 2000
+  "bcrypt",
+  "bcryptprimitives",
+  "bluetoothapis",
+  "d3d11",
+  "d3d12",
+  "d3d9",
+  "dwmapi",
+  "dwrite",
+  "dxgi",
+  "dxva2",
+  "mf",
+  "mfplat",
+  "mfreadwrite",
+  "ncrypt",
+  "ndfapi",
+  "propsys",
+  "shcore",
+  "uiautomationcore",
+  "uxtheme",
+  "wevtapi",
+  "winusb",
+  "zipfldr",
+#endif
 #undef DEFINE_THUNK
 }
 
