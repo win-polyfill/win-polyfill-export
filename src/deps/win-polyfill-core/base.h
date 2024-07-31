@@ -31,12 +31,14 @@
 /* for pathcch.h */
 #define PATHCCH_NO_DEPRECATE
 
+#include <d3d9.h>
+#include <d3dhal.h>
+
 #include <bcrypt.h>
 #include <bluetoothleapis.h>
 #include <cfgmgr32.h>
 #include <d3d11.h>
 #include <d3d12.h>
-#include <d3d9.h>
 #include <dbghelp.h>
 #include <dpapi.h>
 #include <dwmapi.h>

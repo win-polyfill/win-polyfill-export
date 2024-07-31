@@ -31,28 +31,51 @@ typedef NTSTATUS *PNTSTATUS;
 #include <aclapi.h>
 #include <appmgmt.h>
 #include <appmodel.h>
+#include <devquery.h>
 #include <errhandlingapi.h>
 #include <evntcons.h>
+#include <i_cryptasn1tls.h>
 #include <ime.h>
 #include <lmserver.h>
 #include <memoryapi.h>
 #include <msacmdlg.h>
+#include <mssip.h>
 #include <ncrypt.h>
 #include <olectl.h>
 #include <oobenotification.h>
 #include <perflib.h>
 #include <processsnapshot.h>
 #include <sddl.h>
+#include <swdevice.h>
 #include <tlhelp32.h>
 #include <wct.h>
 #include <wincred.h>
 #include <windowsceip.h>
 #include <winnls32.h>
 #include <winsafer.h>
-#include <devquery.h>
-#include <swdevice.h>
-#include <mssip.h>
-#include <i_cryptasn1tls.h>
+
+#include <wingdi.h>
+#include <winddi.h>
+#include <winppi.h>
+#include <d3dkmthk.h>
+#include <usp10.h>
+
+#include <ddrawint.h>
+typedef PDD_HALINFO LPDDHALINFO;
+typedef PDD_CALLBACKS LPDDHAL_DDCALLBACKS;
+typedef PDD_PALETTECALLBACKS LPDDHAL_DDPALETTECALLBACKS;
+typedef PDD_SURFACECALLBACKS LPDDHAL_DDSURFACECALLBACKS;
+typedef PDD_VIDEOPORTCALLBACKS LPDDHAL_DDVIDEOPORTCALLBACKS;
+typedef PDD_COLORCONTROLCALLBACKS LPDDHAL_DDCOLORCONTROLCALLBACKS;
+typedef PDD_KERNELCALLBACKS LPDDHAL_DDKERNELCALLBACKS;
+typedef PDD_MOTIONCOMPCALLBACKS LPDDHAL_DDMOTIONCOMPCALLBACKS;
+typedef PDD_MISCELLANEOUS2CALLBACKS LPDDHAL_DDMISCELLANEOUS2CALLBACKS;
+typedef PDD_D3DBUFCALLBACKS LPDDHAL_D3DBUFCALLBACKS;
+typedef PDD_NTCALLBACKS LPDDHAL_DDNTCALLBACKS;
+
+typedef struct _DDHAL_DDEXEBUFCALLBACKS FAR *LPDDHAL_DDEXEBUFCALLBACKS;
+typedef struct _VIDMEM FAR *LPVIDMEM;
+#include <ddrawgdi.h>
 
 #include "gen-exports-api.h"
 
@@ -227,16 +250,18 @@ void gen_functions()
     }
 #endif
 
-#include "ntdll_full.h"
 #include "kernel32_full.h"
+#include "ntdll_full.h"
 
-#include "user32_full.h"
-#include "shell32_full.h"
 #include "advapi32_full.h"
 #include "cfgmgr32_full.h"
 #include "crypt32_full.h"
 #include "dbghelp_full.h"
 #include "esent_full.h"
+#include "shell32_full.h"
+#include "user32_full.h"
+
+#include "gdi32_full.h"
 
 #undef DEFINE_THUNK
 }

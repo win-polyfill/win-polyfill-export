@@ -6489,8 +6489,6 @@
 #undef GetBkMode
 #undef GetBoundsRect
 #undef GetBrushOrgEx
-#undef GetCertificate
-#undef GetCertificateSize
 #undef GetCharABCWidthsA
 #undef GetCharABCWidthsFloatA
 #undef GetCharABCWidthsFloatW
@@ -6551,7 +6549,6 @@
 #undef GetMiterLimit
 #undef GetNearestColor
 #undef GetNearestPaletteIndex
-#undef GetNumberOfPhysicalMonitors
 #undef GetObjectA
 #undef GetObjectType
 #undef GetObjectW
@@ -6559,7 +6556,6 @@
 #undef GetOutlineTextMetricsW
 #undef GetPaletteEntries
 #undef GetPath
-#undef GetPhysicalMonitors
 #undef GetPixel
 #undef GetPixelFormat
 #undef GetPolyFillMode
@@ -6589,7 +6585,6 @@
 #undef GetTextFaceW
 #undef GetTextMetricsA
 #undef GetTextMetricsW
-#undef GetTransform
 #undef GetViewportExtEx
 #undef GetViewportOrgEx
 #undef GetWinMetaFileBits
@@ -6770,7 +6765,6 @@
 #undef XLATEOBJ_hGetColorTransform
 #undef XLATEOBJ_iXlate
 #undef XLATEOBJ_piVector
-#undef fpClosePrinter
 #undef AddIPAddress
 #undef AllocateAndGetTcpExTableFromStack
 #undef AllocateAndGetUdpExTableFromStack

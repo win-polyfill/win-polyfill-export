@@ -99,7 +99,17 @@ const ApisToIgnore = [
   "JetCreateDatabase3",
   "JetBeginSurrogateBackup",
   "JetEndSurrogateBackup",
-  "JetPrereadIndexRange"
+  "JetPrereadIndexRange",
+
+  // gdi32 member function
+  "GetTransform",
+  "GetCertificate",
+  "GetCertificateSize",
+  "fpClosePrinter",
+
+  // gdi32 suffix
+  "GetNumberOfPhysicalMonitors",
+  "GetPhysicalMonitors",
 ];
 
 const ExportData = [
