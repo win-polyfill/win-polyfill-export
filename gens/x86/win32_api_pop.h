@@ -133,6 +133,7 @@
 #undef NtAccessCheckByTypeResultList
 #undef NtAccessCheckByTypeResultListAndAuditAlarm
 #undef NtAccessCheckByTypeResultListAndAuditAlarmByHandle
+#undef NtAcquireCMFViewOwnership
 #undef NtAddAtom
 #undef NtAddAtomEx
 #undef NtAddBootEntry
@@ -458,6 +459,7 @@
 #undef NtRecoverTransactionManager
 #undef NtRegisterProtocolAddressInformation
 #undef NtRegisterThreadTerminatePort
+#undef NtReleaseCMFViewOwnership
 #undef NtReleaseKeyedEvent
 #undef NtReleaseMutant
 #undef NtReleaseSemaphore
@@ -1409,6 +1411,7 @@
 #undef ZwAccessCheckByTypeResultList
 #undef ZwAccessCheckByTypeResultListAndAuditAlarm
 #undef ZwAccessCheckByTypeResultListAndAuditAlarmByHandle
+#undef ZwAcquireCMFViewOwnership
 #undef ZwAddAtom
 #undef ZwAddAtomEx
 #undef ZwAddBootEntry
@@ -1731,6 +1734,7 @@
 #undef ZwRecoverTransactionManager
 #undef ZwRegisterProtocolAddressInformation
 #undef ZwRegisterThreadTerminatePort
+#undef ZwReleaseCMFViewOwnership
 #undef ZwReleaseKeyedEvent
 #undef ZwReleaseMutant
 #undef ZwReleaseSemaphore
@@ -2579,7 +2583,6 @@
 #undef GetNamedPipeServerProcessId
 #undef GetNamedPipeServerSessionId
 #undef GetNativeSystemInfo
-#undef GetNumaAvailableMemory
 #undef GetNumaAvailableMemoryNode
 #undef GetNumaAvailableMemoryNodeEx
 #undef GetNumaHighestNodeNumber
@@ -4435,7 +4438,6 @@
 #undef StrCmpNIA
 #undef StrCmpNIW
 #undef StrCmpNW
-#undef StrCpyNA
 #undef StrCpyNW
 #undef StrRChrA
 #undef StrRChrIA

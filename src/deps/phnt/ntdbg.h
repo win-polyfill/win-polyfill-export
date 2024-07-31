@@ -60,6 +60,13 @@ DbgPrintEx(
 
 NTSYSAPI
 ULONG
+STDAPIVCALLTYPE
+DbgPrintReturnControlC(
+    _In_z_ _Printf_format_string_ PCCH Format,
+    ...);
+
+NTSYSAPI
+ULONG
 NTAPI
 vDbgPrintEx(
     _In_ ULONG ComponentId,

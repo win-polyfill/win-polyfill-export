@@ -5704,7 +5704,7 @@ NtGetNlsSectionPtr(
     _Out_ PULONG SectionSize
     );
 
-#if (PHNT_VERSION < PHNT_WIN7)
+#if (PHNT_VERSION < PHNT_WIN7) || defined(PHNT_ENABLE_ALL)
 
 NTSYSCALLAPI
 NTSTATUS

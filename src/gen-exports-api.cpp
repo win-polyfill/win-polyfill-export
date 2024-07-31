@@ -12,8 +12,12 @@
 #define WINNT
 #define _IMAGEHLP_SOURCE_
 
-#include <math.h>
+#define PHNT_RTL_BYTESWAP
+#define PHNT_ENABLE_ALL
+
 #include <sal.h>
+
+#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -54,8 +58,8 @@ typedef NTSTATUS *PNTSTATUS;
 #include <winnls32.h>
 #include <winsafer.h>
 
-#include <wingdi.h>
 #include <winddi.h>
+#include <wingdi.h>
 #include <winppi.h>
 #include <d3dkmthk.h>
 #include <usp10.h>
@@ -76,6 +80,10 @@ typedef PDD_NTCALLBACKS LPDDHAL_DDNTCALLBACKS;
 typedef struct _DDHAL_DDEXEBUFCALLBACKS FAR *LPDDHAL_DDEXEBUFCALLBACKS;
 typedef struct _VIDMEM FAR *LPVIDMEM;
 #include <ddrawgdi.h>
+
+#include <icmpapi.h>
+#include <dsgetdc.h>
+#include <dsrole.h>
 
 #include "gen-exports-api.h"
 
@@ -151,9 +159,21 @@ struct FunctionTraits<
     static constexpr int CallingConventionId = 1;
 };
 
+template <typename R, typename... Args>
+struct FunctionTraits<
+    R(CC_FASTCALL *)(Args...),
+    std::is_same_v<CallingConventions::Cdecl, CallingConventions::Fastcall> ? 1 : 0>
+    : FunctionTraitsBase<R, Args...>
+{
+    using Pointer = R(CC_FASTCALL *)(Args...);
+    using PointerClean = R (*)(Args...);
+    using CallingConvention = CallingConventions::Fastcall;
+    static constexpr int CallingConventionId = 2;
+};
+
 template <typename T> struct FunctionTraits<T, 0>
 {
-    static constexpr int CallingConventionId = 2;
+    static constexpr int CallingConventionId = 3;
 };
 
 template <typename T>
@@ -181,7 +201,7 @@ template <typename T>
 std::enable_if_t<!std::is_pointer_v<T> && !std::is_void_v<T>>
 CreateArgTypeInfo(ArtTypeInfo &info)
 {
-    info.function_id = 3;
+    info.function_id = 4;
     info.size = sizeof(T);
     info.alignment = alignof(T);
     info.name = typeid(T).name();
@@ -234,7 +254,7 @@ void gen_functions()
 #define DEFINE_THUNK_DATA(Module, Function)
 #define DEFINE_THUNK_CDECL(Module, Function)
 
-#if 1
+#if 0
 #define DEFINE_THUNK(Module, Function)                                                   \
     {                                                                                    \
         typedef FunctionTraits<decltype(&Function)> Traits;                              \
@@ -250,18 +270,20 @@ void gen_functions()
     }
 #endif
 
-#include "kernel32_full.h"
 #include "ntdll_full.h"
+
+#include "kernel32_full.h"
 
 #include "advapi32_full.h"
 #include "cfgmgr32_full.h"
 #include "crypt32_full.h"
 #include "dbghelp_full.h"
 #include "esent_full.h"
+#include "gdi32_full.h"
 #include "shell32_full.h"
 #include "user32_full.h"
-
-#include "gdi32_full.h"
+#include "iphlpapi_full.h"
+#include "netapi32_full.h"
 
 #undef DEFINE_THUNK
 }

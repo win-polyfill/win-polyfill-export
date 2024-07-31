@@ -2,6 +2,28 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "gen-exports-x64",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/x64-pc-windows-msvc-17-debug/bin/gen-exports.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/",
+      "environment": [],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "gen-exports-x86",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/i686-pc-windows-msvc-17-debug/bin/gen-exports.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/",
+      "environment": [],
+      "console": "integratedTerminal"
+    },
+    {
       "name": "sufix-array-debug",
       "type": "cppvsdbg",
       "request": "launch",

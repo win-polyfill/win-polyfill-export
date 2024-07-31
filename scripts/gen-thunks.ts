@@ -14,6 +14,8 @@ const ApisToIgnore = [
   // inlined functions
   "NtGetTickCount",
   "NtCurrentTeb",
+  // fake exported functions
+  "NtPullTransaction",
 
   // These are not real function, should be filtered out by script
   // TODO:
@@ -35,6 +37,8 @@ const ApisToIgnore = [
   "HeapExtend",
   "PssWalkMarkerSeek",
   "DrawFrame",
+  // kernel32
+  "ResetState",
 
   // DLL apis present in all DLLs
   "DllGetClassObject",
@@ -82,7 +86,9 @@ const ApisToIgnore = [
   //banned functions
   "StrNCpyA",
   "StrNCpyW",
+  "StrCpyNA",
   "CDefFolderMenu_Create",
+  "GetNumaAvailableMemory",
 
   // dbghelp not function decls
   "dbghelp",
@@ -329,10 +335,10 @@ const DllNameList = [
   "crypt32",
   "dbghelp",
   "esent",
-
   "gdi32",
   "iphlpapi",
   "netapi32",
+
   "ole32",
   "pdh",
   "powrprof",

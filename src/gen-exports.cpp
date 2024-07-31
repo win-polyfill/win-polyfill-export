@@ -37,7 +37,7 @@ void write_argument(FILE *f, const FunctionInfo &func, int i)
     }
     else
     {
-        if (arg.size > 4 && arg.size %4 != 0)
+        if (arg.size > 4 && arg.size % 4 != 0)
         {
             fprintf(stderr, "Something is wrong\n");
         }
@@ -45,6 +45,17 @@ void write_argument(FILE *f, const FunctionInfo &func, int i)
         write(f, "a");
         write(f, itoa(i, buffer, 10));
     }
+}
+
+const char *get_call_conv(int conv_id)
+{
+    if (conv_id == 0)
+        return "__cdecl";
+    if (conv_id == 1)
+        return "__stdcall";
+    if (conv_id == 2)
+        return "__fastcall";
+    return "__unknow_conv";
 }
 
 int main(void)
@@ -63,14 +74,9 @@ int main(void)
         write(f, "extern \"C\" ");
 
         write_argument(f, func, 0);
-        if (func.CallingConventionId == 0)
-        {
-            write(f, " __cdecl ");
-        }
-        else
-        {
-            write(f, " __stdcall ");
-        }
+
+        fprintf(f, " %s ", get_call_conv(func.CallingConventionId));
+
         int total_size = 0;
         for (int i = 1; i < func.ArgTypes.size(); ++i)
         {
@@ -84,10 +90,14 @@ int main(void)
                 total_size += arg.size;
             }
         }
-        if (func.CallingConventionId == 0)
-            fprintf(f_thunks, "__DEFINE_THUNKS_FUNC_SIZE(%s, %s, %d)\n", "__cdecl", func.FunctionName.c_str(), total_size);
-        else
-            fprintf(f_thunks, "__DEFINE_THUNKS_FUNC_SIZE(%s, %s, %d)\n", "__stdcall", func.FunctionName.c_str(), total_size);
+
+        fprintf(
+            f_thunks,
+            "__DEFINE_THUNKS_FUNC_SIZE(%s, %s, %d)\n",
+            get_call_conv(func.CallingConventionId),
+            func.FunctionName.c_str(),
+            total_size);
+
         fprintf(f, "wp_%s", func.FunctionName.c_str());
         fprintf(f_def, "    wp_%s\n", func.FunctionName.c_str());
         auto sz = func.ArgTypes.size();

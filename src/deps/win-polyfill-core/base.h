@@ -20,10 +20,20 @@
 #endif
 
 #include <winsock2.h>
-#include <ws2def.h>
-#include <ws2tcpip.h>
 
 #include <windows.h>
+
+#include <ip2string.h>
+#include <windns.h>
+#include <ws2def.h>
+#include <ws2ipdef.h>
+#include <ws2tcpip.h>
+
+/* iphlpapi should after windns ws2def ws2ipdef ws2tcpip */
+#include <iphlpapi.h>
+
+/* lmjoin should after iphlpapi */
+#include <lmjoin.h>
 
 #include <ntstatus.h>
 #include <winnt.h>
@@ -47,7 +57,6 @@
 #include <esent.h>
 #include <evntprov.h>
 #include <evntrace.h>
-#include <ip2string.h>
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
@@ -55,7 +64,6 @@
 #include <ncrypt.h>
 #include <ndfapi.h>
 #include <pathcch.h>
-#include <pdh.h>
 #include <powrprof.h>
 #include <processthreadsapi.h>
 #include <propvarutil.h>
@@ -83,9 +91,3 @@
 #include <dwrite.h>
 #include <dwrite_3.h>
 #endif
-
-/* iphlpapi should after them all */
-#include <iphlpapi.h>
-
-/* lmjoin should after iphlpapi */
-#include <lmjoin.h>
