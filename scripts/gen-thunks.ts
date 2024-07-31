@@ -84,13 +84,22 @@ const ApisToIgnore = [
   "StrNCpyW",
   "CDefFolderMenu_Create",
 
-  // dbghelp no function decls
+  // dbghelp not function decls
   "dbghelp",
   "dh",
   "sym",
   "symsrv",
   "block",
   "lm",
+
+  // esent not function decls
+  "ese",
+  "esent",
+  "JetAttachDatabase3",
+  "JetCreateDatabase3",
+  "JetBeginSurrogateBackup",
+  "JetEndSurrogateBackup",
+  "JetPrereadIndexRange"
 ];
 
 const ExportData = [
@@ -309,8 +318,8 @@ const DllNameList = [
   "cfgmgr32",
   "crypt32",
   "dbghelp",
-
   "esent",
+
   "gdi32",
   "iphlpapi",
   "netapi32",

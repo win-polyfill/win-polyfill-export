@@ -1,3 +1,5 @@
+#define _WIN32_WINNT 0x0A01
+
 #define _CRT_FUNCTIONS_REQUIRED 1
 #define _STL_COMPILER_PREPROCESSOR 1
 #define _NO_CRT_STDIO_INLINE
@@ -234,6 +236,7 @@ void gen_functions()
 #include "cfgmgr32_full.h"
 #include "crypt32_full.h"
 #include "dbghelp_full.h"
+#include "esent_full.h"
 
 #undef DEFINE_THUNK
 }

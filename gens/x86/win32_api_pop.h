@@ -5767,7 +5767,6 @@
 #undef JetAttachDatabase2
 #undef JetAttachDatabase2A
 #undef JetAttachDatabase2W
-#undef JetAttachDatabase3
 #undef JetAttachDatabaseA
 #undef JetAttachDatabaseW
 #undef JetBackup
@@ -5781,7 +5780,6 @@
 #undef JetBeginSession
 #undef JetBeginSessionA
 #undef JetBeginSessionW
-#undef JetBeginSurrogateBackup
 #undef JetBeginTransaction
 #undef JetBeginTransaction2
 #undef JetBeginTransaction3
@@ -5800,7 +5798,6 @@
 #undef JetCreateDatabase2
 #undef JetCreateDatabase2A
 #undef JetCreateDatabase2W
-#undef JetCreateDatabase3
 #undef JetCreateDatabaseA
 #undef JetCreateDatabaseW
 #undef JetCreateIndex
@@ -5869,7 +5866,6 @@
 #undef JetEndExternalBackupInstance
 #undef JetEndExternalBackupInstance2
 #undef JetEndSession
-#undef JetEndSurrogateBackup
 #undef JetEnumerateColumns
 #undef JetEscrowUpdate
 #undef JetExternalRestore
@@ -5989,7 +5985,6 @@
 #undef JetOpenTemporaryTable
 #undef JetOpenTemporaryTable2
 #undef JetPrepareUpdate
-#undef JetPrereadIndexRange
 #undef JetPrereadIndexRanges
 #undef JetPrereadKeys
 #undef JetReadFile
@@ -6059,8 +6054,6 @@
 #undef JetUnregisterCallback
 #undef JetUpdate
 #undef JetUpdate2
-#undef ese
-#undef esent
 #undef AbortDoc
 #undef AbortPath
 #undef AddFontMemResourceEx
