@@ -7786,7 +7786,6 @@
 #undef InitializeProcessForWsWatch
 #undef QueryWorkingSet
 #undef QueryWorkingSetEx
-#undef ExtensionPropSheetPageProc
 #undef InstallHinfSection
 #undef InstallHinfSectionA
 #undef InstallHinfSectionW

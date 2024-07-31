@@ -120,6 +120,9 @@ const ApisToIgnore = [
   // pdh suffix
   "PdhLogServiceControlA",
   "PdhLogServiceControlW",
+
+  // setupapi suffix
+  "ExtensionPropSheetPageProc",
 ];
 
 const ExportData = [
@@ -175,6 +178,9 @@ const VaArgApis = [
   // user32 vaarg
   "wsprintfA",
   "wsprintfW",
+
+  // netapi32 vaarg
+  "RxRemoteApi",
 ];
 
 const FunctionPrefixTable: number[] = [];

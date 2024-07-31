@@ -14,3 +14,4 @@
 #include "gen-fixes/user32.h"
 #include "gen-fixes/netapi32.h"
 #include "gen-fixes/pdh.h"
+#include "gen-fixes/setupapi.h"

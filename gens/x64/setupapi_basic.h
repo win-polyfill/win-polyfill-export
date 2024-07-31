@@ -1,4 +1,3 @@
-DEFINE_THUNK(setupapi, ExtensionPropSheetPageProc)
 DEFINE_THUNK(setupapi, InstallHinfSection)
 DEFINE_THUNK(setupapi, InstallHinfSectionA)
 DEFINE_THUNK(setupapi, InstallHinfSectionW)

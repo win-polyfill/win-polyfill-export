@@ -292,12 +292,12 @@ void gen_functions()
 #include "netapi32_full.h"
 #include "ole32_full.h"
 #include "pdh_full.h"
+#include "powrprof_full.h"
+#include "psapi_full.h"
+#include "setupapi_full.h"
 
 #if 0
 
-  "pdh",
-  "powrprof",
-  "psapi",
   "setupapi",
   "shlwapi",
   "userenv",
