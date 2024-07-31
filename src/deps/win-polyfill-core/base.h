@@ -40,6 +40,7 @@
 
 /* for pathcch.h */
 #define PATHCCH_NO_DEPRECATE
+#include <pathcch.h>
 
 #include <d3d9.h>
 #include <d3dhal.h>
@@ -63,7 +64,6 @@
 #include <mschapp.h>
 #include <ncrypt.h>
 #include <ndfapi.h>
-#include <pathcch.h>
 #include <powrprof.h>
 #include <processthreadsapi.h>
 #include <propvarutil.h>

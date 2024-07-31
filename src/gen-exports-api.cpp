@@ -32,6 +32,12 @@ typedef NTSTATUS *PNTSTATUS;
 #define _NTRTL_FWD_H
 #include "win-polyfill-core/nt.h"
 
+// The COM apis should at the beggning
+#define RPCPROXY_ENABLE_CPP_NO_CINTERFACE
+#include <rpcproxy.h>
+#include <callobj.h>
+#include <messagedispatcherapi.h>
+
 #include <aclapi.h>
 #include <appmgmt.h>
 #include <appmodel.h>
@@ -284,6 +290,7 @@ void gen_functions()
 #include "user32_full.h"
 #include "iphlpapi_full.h"
 #include "netapi32_full.h"
+#include "ole32_full.h"
 
 #undef DEFINE_THUNK
 }
