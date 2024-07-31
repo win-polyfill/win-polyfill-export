@@ -57,7 +57,7 @@ Dependencies -json C:\work\win-polyfill\08-Windows-NT-6.1-Dll\x64\%%x.dll -expor
 Dependencies -json C:\work\win-polyfill\08-Windows-NT-6.2-Dll\x64\%%x.dll -exports > gens\x64\%%x-nt-6.2.json
 Dependencies -json C:\Windows\System32\%%x.dll -exports > gens\x64\%%x-nt-10.0.19045.json
 
-Dependencies -json C:\work\win-polyfill\00-Windows2000-SP4-Dll\x86\%%x.dll -exports > gens\x86\%%x-nt-5.0.json
+Dependencies -json C:\work\win-polyfill\00-Windows2000-RTM-Dll\x86\%%x.dll -exports > gens\x86\%%x-nt-5.0-rtm.json
 Dependencies -json C:\work\win-polyfill\01-WindowsXp-RTM-Dll\x86\%%x.dll -exports > gens\x86\%%x-nt-5.1.json
 Dependencies -json C:\work\win-polyfill\03-Windows-Server2003-RTM-Dll\x86\%%x.dll -exports > gens\x86\%%x-nt-5.2.json
 Dependencies -json C:\work\win-polyfill\08-Windows-NT-6.0-Dll\x86\%%x.dll -exports > gens\x86\%%x-nt-6.0.json

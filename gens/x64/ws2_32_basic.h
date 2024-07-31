@@ -1,7 +1,6 @@
 DEFINE_THUNK(ws2_32, FreeAddrInfoW)
 DEFINE_THUNK(ws2_32, GetAddrInfoW)
 DEFINE_THUNK(ws2_32, GetNameInfoW)
-DEFINE_THUNK(ws2_32, WEP)
 DEFINE_THUNK(ws2_32, WPUCompleteOverlappedRequest)
 DEFINE_THUNK(ws2_32, WSAAccept)
 DEFINE_THUNK(ws2_32, WSAAddressToStringA)

@@ -1,6 +1,5 @@
 DEFINE_THUNK(propsys, ClearPropVariantArray)
 DEFINE_THUNK(propsys, ClearVariantArray)
-DEFINE_THUNK(propsys, GetProxyDllInfo)
 DEFINE_THUNK(propsys, InitPropVariantFromBooleanVector)
 DEFINE_THUNK(propsys, InitPropVariantFromBuffer)
 DEFINE_THUNK(propsys, InitPropVariantFromCLSID)

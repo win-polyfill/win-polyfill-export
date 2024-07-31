@@ -46,6 +46,7 @@ const ApisToIgnore = [
   "DllInstall",
   "DllRegisterServer",
   "DllUnregisterServer",
+  "GetProxyDllInfo",
 
   // TODO: redirection
   "K32EmptyWorkingSet",
@@ -123,6 +124,9 @@ const ApisToIgnore = [
 
   // setupapi suffix
   "ExtensionPropSheetPageProc",
+
+  // ws2_32 suffix
+  "WEP",
 ];
 
 const ExportData = [
@@ -181,6 +185,12 @@ const VaArgApis = [
 
   // netapi32 vaarg
   "RxRemoteApi",
+  // setupapi vaarg
+  "SetupWriteTextLog",
+  "SetupWriteTextLogError",
+  // shlwapi
+  "wnsprintfA",
+  "wnsprintfW",
 ];
 
 const FunctionPrefixTable: number[] = [];

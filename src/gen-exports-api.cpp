@@ -1,4 +1,5 @@
 #define _WIN32_WINNT 0x0A01
+#define WIN_NOEXCEPT_UNDEF
 
 #define _CRT_FUNCTIONS_REQUIRED 1
 #define _STL_COMPILER_PREPROCESSOR 1
@@ -34,9 +35,37 @@ typedef NTSTATUS *PNTSTATUS;
 
 // The COM apis should at the beggning
 #define RPCPROXY_ENABLE_CPP_NO_CINTERFACE
-#include <rpcproxy.h>
 #include <callobj.h>
 #include <messagedispatcherapi.h>
+#include <rpcproxy.h>
+
+// dxva2
+#include <dxvahd.h>
+#include <highlevelmonitorconfigurationapi.h>
+#include <lowlevelmonitorconfigurationapi.h>
+#include <opmapi.h>
+
+// ncrypt
+#include <ncrypt.h>
+#include <ncryptprotect.h>
+
+
+// mf
+// dvn -> ks -> ksmedia -> mf
+#include <dvp.h>
+
+#include <ks.h>
+
+#include <ksmedia.h>
+
+#include <evr.h>
+#include <mfapi.h>
+#include <mfcontentdecryptionmodule.h>
+#include <mfd3d12.h>
+#include <mfidl.h>
+#include <mfreadwrite.h>
+#include <wmcontainer.h>
+
 
 #include <aclapi.h>
 #include <appmgmt.h>
@@ -46,7 +75,6 @@ typedef NTSTATUS *PNTSTATUS;
 #include <evntcons.h>
 #include <i_cryptasn1tls.h>
 #include <ime.h>
-#include <lmserver.h>
 #include <memoryapi.h>
 #include <msacmdlg.h>
 #include <mssip.h>
@@ -64,11 +92,17 @@ typedef NTSTATUS *PNTSTATUS;
 #include <winnls32.h>
 #include <winsafer.h>
 
+// shcore
+#include <featurestagingapi.h>
+#include <isolatedapplauncher.h>
+#include <shcore.h>
+
+
+#include <d3dkmthk.h>
+#include <usp10.h>
 #include <winddi.h>
 #include <wingdi.h>
 #include <winppi.h>
-#include <d3dkmthk.h>
-#include <usp10.h>
 
 #include <ddrawint.h>
 typedef PDD_HALINFO LPDDHALINFO;
@@ -87,9 +121,9 @@ typedef struct _DDHAL_DDEXEBUFCALLBACKS FAR *LPDDHAL_DDEXEBUFCALLBACKS;
 typedef struct _VIDMEM FAR *LPVIDMEM;
 #include <ddrawgdi.h>
 
-#include <icmpapi.h>
 #include <dsgetdc.h>
 #include <dsrole.h>
+#include <icmpapi.h>
 
 #include "gen-exports-api.h"
 
@@ -260,7 +294,7 @@ void gen_functions()
 #define DEFINE_THUNK_DATA(Module, Function)
 #define DEFINE_THUNK_CDECL(Module, Function)
 
-#if 0
+#if 1
 #define DEFINE_THUNK(Module, Function)                                                   \
     {                                                                                    \
         typedef FunctionTraits<decltype(&Function)> Traits;                              \
@@ -286,8 +320,6 @@ void gen_functions()
 #include "dbghelp_full.h"
 #include "esent_full.h"
 #include "gdi32_full.h"
-#include "shell32_full.h"
-#include "user32_full.h"
 #include "iphlpapi_full.h"
 #include "netapi32_full.h"
 #include "ole32_full.h"
@@ -295,40 +327,39 @@ void gen_functions()
 #include "powrprof_full.h"
 #include "psapi_full.h"
 #include "setupapi_full.h"
+#include "shell32_full.h"
+#include "shlwapi_full.h"
+#include "user32_full.h"
+#include "userenv_full.h"
+#include "version_full.h"
+#include "winhttp_full.h"
+#include "ws2_32_full.h"
 
-#if 0
 
-  "setupapi",
-  "shlwapi",
-  "userenv",
-  "version",
-  "winhttp",
-  "ws2_32",
+// Not present on Windows 2000
+#include "bcrypt_full.h"
+#include "bcryptprimitives_full.h"
+#include "bluetoothapis_full.h"
+#include "d3d11_full.h"
+#include "d3d12_full.h"
+#include "d3d9_full.h"
+#include "dwmapi_full.h"
+#include "dwrite_full.h"
+#include "dxgi_full.h"
+#include "dxva2_full.h"
+#include "mf_full.h"
+#include "mfplat_full.h"
+#include "mfreadwrite_full.h"
+#include "ncrypt_full.h"
+#include "ndfapi_full.h"
+#include "propsys_full.h"
+#include "shcore_full.h"
+#include "uiautomationcore_full.h"
+#include "uxtheme_full.h"
+#include "wevtapi_full.h"
+#include "winusb_full.h"
+#include "zipfldr_full.h"
 
-  // Not present on Windows 2000
-  "bcrypt",
-  "bcryptprimitives",
-  "bluetoothapis",
-  "d3d11",
-  "d3d12",
-  "d3d9",
-  "dwmapi",
-  "dwrite",
-  "dxgi",
-  "dxva2",
-  "mf",
-  "mfplat",
-  "mfreadwrite",
-  "ncrypt",
-  "ndfapi",
-  "propsys",
-  "shcore",
-  "uiautomationcore",
-  "uxtheme",
-  "wevtapi",
-  "winusb",
-  "zipfldr",
-#endif
 #undef DEFINE_THUNK
 }
 

@@ -8576,7 +8576,6 @@
 #undef InetPtonW
 #undef SetAddrInfoExA
 #undef SetAddrInfoExW
-#undef WEP
 #undef WPUCompleteOverlappedRequest
 #undef WSAAccept
 #undef WSAAddressToStringA
@@ -9188,7 +9187,6 @@
 #undef NdfRepairIncident
 #undef ClearPropVariantArray
 #undef ClearVariantArray
-#undef GetProxyDllInfo
 #undef InitPropVariantFromBooleanVector
 #undef InitPropVariantFromBuffer
 #undef InitPropVariantFromCLSID
