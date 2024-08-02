@@ -1,4 +1,5 @@
 #define _WIN32_WINNT 0x0A01
+#define WINNT
 #define WIN_NOEXCEPT_UNDEF
 
 #define _CRT_FUNCTIONS_REQUIRED 1
@@ -10,17 +11,28 @@
 #define DECLSPEC_NORETURN
 #define WINBASE_DECLARE_RESTORE_LAST_ERROR
 #define FE_IME
-#define WINNT
 #define _IMAGEHLP_SOURCE_
 
 #define PHNT_RTL_BYTESWAP
 #define PHNT_ENABLE_ALL
+
+#define abs abs_none
+#define memchr memchr_none
+#define strchr strchr_none
+#define strpbrk strpbrk_none
+#define strrchr strrchr_none
+#define strstr strstr_none
+#define wcschr wcschr_none
+#define wcspbrk wcspbrk_none
+#define wcsrchr wcsrchr_none
+#define wcsstr wcsstr_none
 
 #include <sal.h>
 
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define NTSTATUS_DEFINED
 typedef enum : int32_t
@@ -292,7 +304,7 @@ void gen_functions()
 void gen_functions()
 {
 #define DEFINE_THUNK_DATA(Module, Function)
-#define DEFINE_THUNK_CDECL(Module, Function)
+#define DEFINE_THUNK_VAARG(Module, Function)
 
 #if 1
 #define DEFINE_THUNK(Module, Function)                                                   \

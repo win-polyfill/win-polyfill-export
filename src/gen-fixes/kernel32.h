@@ -18,6 +18,7 @@ ReplaceFile(
     _Reserved_ LPVOID   lpExclude,
     _Reserved_ LPVOID  lpReserved
     );
+
 WINBASEAPI
 _NullNull_terminated_
 LPCH

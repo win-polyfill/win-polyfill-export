@@ -4,6 +4,7 @@
 
 #include "win32_api_pop.h"
 
+#include "gen-fixes/ntdll.h"
 #include "gen-fixes/kernel32.h"
 
 #include "gen-fixes/advapi32.h"

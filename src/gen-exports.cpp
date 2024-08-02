@@ -93,7 +93,8 @@ int main(void)
 
         fprintf(
             f_thunks,
-            "__DEFINE_THUNKS_FUNC_SIZE(%s, %s, %d)\n",
+            "__DEFINE_THUNKS_FUNC_SIZE(%s, %s, %s, %d)\n",
+            func.ModuleName.c_str(),
             get_call_conv(func.CallingConventionId),
             func.FunctionName.c_str(),
             total_size);

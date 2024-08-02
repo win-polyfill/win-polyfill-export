@@ -114,7 +114,6 @@
 #undef LdrShutdownProcess
 #undef LdrShutdownThread
 #undef LdrStandardizeSystemPath
-#undef LdrSystemDllInitBlock
 #undef LdrUnloadAlternateResourceModule
 #undef LdrUnloadAlternateResourceModuleEx
 #undef LdrUnloadDll
@@ -6769,8 +6768,6 @@
 #undef XLATEOBJ_iXlate
 #undef XLATEOBJ_piVector
 #undef AddIPAddress
-#undef AllocateAndGetTcpExTableFromStack
-#undef AllocateAndGetUdpExTableFromStack
 #undef CancelIPChangeNotify
 #undef CancelIfTimestampConfigChange
 #undef CancelMibChangeNotify2

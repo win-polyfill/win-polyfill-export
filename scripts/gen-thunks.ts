@@ -47,6 +47,7 @@ const ApisToIgnore = [
   "DllRegisterServer",
   "DllUnregisterServer",
   "GetProxyDllInfo",
+  "LdrSystemDllInitBlock",
 
   // TODO: redirection
   "K32EmptyWorkingSet",
@@ -122,6 +123,10 @@ const ApisToIgnore = [
   "PdhLogServiceControlA",
   "PdhLogServiceControlW",
 
+  // iphlpapi banned >=vista
+  "AllocateAndGetTcpExTableFromStack",
+  "AllocateAndGetUdpExTableFromStack",
+
   // setupapi suffix
   "ExtensionPropSheetPageProc",
 
@@ -137,11 +142,11 @@ const ExportData = [
   "NlsAnsiCodePage",
   "NlsMbCodePageTag",
   "NlsMbOemCodePageTag",
-  "LdrSystemDllInitBlock",
 ];
 
 // These are vaargs or forced cdecl apis
 const VaArgApis = [
+  // ntdll vaarg
   "DbgPrint",
   "DbgPrintEx",
   "DbgPrintReturnControlC",
@@ -160,29 +165,14 @@ const VaArgApis = [
   "sscanf_s",
   "swprintf_s",
   "swscanf_s",
-
-  "abs",
-  "memchr",
-  "strchr",
-  "strpbrk",
-  "strrchr",
-  "strstr",
-  "wcschr",
-  "wcspbrk",
-  "wcsrchr",
-  "wcsstr",
-
   // advapi32 vaarg
   "TraceMessage",
-
   // shell32 vaarg
   "ShellMessageBoxA",
   "ShellMessageBoxW",
-
   // user32 vaarg
   "wsprintfA",
   "wsprintfW",
-
   // netapi32 vaarg
   "RxRemoteApi",
   // setupapi vaarg
@@ -282,7 +272,7 @@ async function exportFiles(
     let value = funcMap.get(key) ?? 0;
     let define_thunks = "DEFINE_THUNK";
     if (ExportData.indexOf(key) >= 0) define_thunks = "DEFINE_THUNK_DATA";
-    else if (VaArgApis.indexOf(key) >= 0) define_thunks = "DEFINE_THUNK_CDECL";
+    else if (VaArgApis.indexOf(key) >= 0) define_thunks = "DEFINE_THUNK_VAARG";
     if (value > 0) {
       if (value == fileCount) {
         KeysJoin.push(`${define_thunks}(${dllname}, ${key})`);

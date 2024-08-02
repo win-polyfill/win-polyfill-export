@@ -1,5 +1,3 @@
-DEFINE_THUNK(iphlpapi, AllocateAndGetTcpExTableFromStack)
-DEFINE_THUNK(iphlpapi, AllocateAndGetUdpExTableFromStack)
 DEFINE_THUNK(iphlpapi, CancelIPChangeNotify)
 DEFINE_THUNK(iphlpapi, CancelIfTimestampConfigChange)
 DEFINE_THUNK(iphlpapi, CancelMibChangeNotify2)
