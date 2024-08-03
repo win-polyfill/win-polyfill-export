@@ -211,6 +211,7 @@ struct FunctionTraits<
     static constexpr int CallingConventionId = 1;
 };
 
+#if defined(_X86_)
 template <typename R, typename... Args>
 struct FunctionTraits<
     R(CC_FASTCALL *)(Args...),
@@ -222,6 +223,7 @@ struct FunctionTraits<
     using CallingConvention = CallingConventions::Fastcall;
     static constexpr int CallingConventionId = 2;
 };
+#endif
 
 template <typename T> struct FunctionTraits<T, 0>
 {

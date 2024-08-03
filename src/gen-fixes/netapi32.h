@@ -6,7 +6,7 @@
 
 extern "C"
 {
-
+#if defined(_X86_)
 DSGETDCAPI
 DWORD
 WINAPI
@@ -30,7 +30,7 @@ DsGetDcNext(
     _Outptr_opt_result_buffer_(*SockAddressCount) LPSOCKET_ADDRESS *SockAddresses,
     _Outptr_opt_result_nullonfailure_ LPSTR *DnsHostName
     );
-
+#endif
 DSGETDCAPI
 VOID
 WINAPI

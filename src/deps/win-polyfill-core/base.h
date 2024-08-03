@@ -40,6 +40,7 @@
 
 /* iphlpapi should after windns ws2def ws2ipdef ws2tcpip */
 #include <iphlpapi.h>
+#include <fltdefs.h>
 
 /* lmjoin should after iphlpapi */
 #include <lmjoin.h>

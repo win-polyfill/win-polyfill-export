@@ -1,5 +1,7 @@
 ﻿// https://www.geeksforgeeks.org/suffix-array-set-2-a-nlognlogn-algorithm/#
 
+import { off } from "process";
+
 // TODO: Use radix sort to improve speed
 // Do not support for big array
 
@@ -157,28 +159,73 @@ export interface SuffixArrayLoaded {
   index: Uint32Array;
 }
 
-export function binary_search(sa: SuffixArrayLoaded, pattern: Uint8Array) {
-  let low = 0;
-  let high = sa.content.length - 1;
+export interface SuffixArrayRange {
+  low: number;
+  high: number;
+}
+
+export function binary_search_range(
+  sa: SuffixArrayLoaded,
+  char: number,
+  offset: number,
+  range: SuffixArrayRange
+): SuffixArrayRange {
+  let low = range.low;
+  let high = range.high;
+  let rangeResult = {
+    high: high,
+    low: low,
+  };
   while (low <= high) {
     let mid = high - ((high - low) >> 1);
-    let sub_matched = sa.content.subarray(
-      sa.index[mid],
-      sa.index[mid] + pattern.length
-    );
-    let cmp_result = -1;
-    if (sub_matched.length >= pattern.length) {
-      cmp_result = Buffer.compare(sub_matched, pattern);
-    }
-    if (cmp_result == 0) {
-      return mid;
-    } else if (cmp_result == -1) {
+    let index_mid = sa.index[mid] + offset;
+    let char_mid = sa.content[index_mid] ?? 0;
+    if (char > char_mid) {
       low = mid + 1;
     } else {
       high = mid - 1;
     }
   }
-  return -1;
+  rangeResult.low = low;
+  let delta = 1;
+  let new_high = low;
+  for (; new_high <= range.high; ) {
+    let index_new_high = sa.index[new_high] + offset;
+    let char_new_high = sa.content[index_new_high] ?? 0;
+    if (char_new_high == char) {
+      low = new_high;
+      new_high += delta;
+      delta <<= 1;
+    } else {
+      high = new_high;
+      break;
+    }
+  }
+  high = Math.min(new_high, range.high);
+  while (low <= high) {
+    let mid = high - ((high - low) >> 1);
+    let index_mid = sa.index[mid] + offset;
+    let char_mid = sa.content[index_mid] ?? 0;
+    if (char < char_mid) {
+      high = mid - 1;
+    } else {
+      low = mid + 1;
+    }
+  }
+  rangeResult.high = high;
+  return rangeResult;
+}
+
+export function binary_search(sa: SuffixArrayLoaded, pattern: Uint8Array):SuffixArrayRange {
+  let result = {
+    low: 0,
+    high: sa.content.length - 1,
+  }
+  for (let i = 0; i < pattern.length; i +=1)
+  {
+    result = binary_search_range(sa, pattern[i], i, result)
+  }
+  return result;
 }
 
 function testb() {
@@ -193,9 +240,34 @@ function testb() {
       content: buf,
       index: su_index,
     };
-    const ret = binary_search(loaded, Buffer.from("ea"));
+    const ret = binary_search(loaded, Buffer.from("an"));
     console.log(ret);
-    console.log(buf.subarray(ret).toString("utf-8"));
+    console.log(buf.subarray(ret.low).toString("utf-8"));
+    let range0 = binary_search_range(loaded, "a".charCodeAt(0), 0, {
+      low: 0,
+      high: buf.length - 1,
+    });
+    console.log(range0);
+    let range1 = binary_search_range(loaded, "e".charCodeAt(0), 0, {
+      low: 0,
+      high: buf.length - 1,
+    });
+    console.log(range1);
+    let range2 = binary_search_range(loaded, "\x01".charCodeAt(0), 0, {
+      low: 0,
+      high: buf.length - 1,
+    });
+    console.log(range2);
+    let range3 = binary_search_range(loaded, "\xff".charCodeAt(0), 0, {
+      low: 0,
+      high: buf.length - 1,
+    });
+    console.log(range3);
+    let range4 = binary_search_range(loaded, "n".charCodeAt(0), 0, {
+      low: 0,
+      high: buf.length - 1,
+    });
+    console.log(range4);
   }
 }
 // testb();

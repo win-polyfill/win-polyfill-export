@@ -55,6 +55,17 @@
         "ts-node/register"
       ],
       "program": "c:\\work\\study\\runtimes\\win-polyfill-export\\scripts\\gen-thunks.ts"
+    },
+    {
+      "type": "node",
+      "name": "debug suffix-array.ts",
+      "request": "launch",
+      "args": [],
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "program": "c:\\work\\study\\runtimes\\win-polyfill-export\\scripts\\suffix-array.ts"
     }
   ]
 }

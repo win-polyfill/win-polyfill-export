@@ -1,7 +1,11 @@
 import fs from "fs/promises";
 import path from "path";
 import { getFiles, readJson } from "./file-util";
-import { SuffixArrayLoaded, binary_search } from "./suffix-array";
+import {
+  SuffixArrayLoaded,
+  SuffixArrayRange,
+  binary_search_range,
+} from "./suffix-array";
 
 interface ExportItem {
   Ordinal: number;
@@ -11,11 +15,13 @@ interface ExportItem {
   ForwardedName: string;
 }
 const ApisToIgnore = [
+  // ntdll
   // inlined functions
   "NtGetTickCount",
   "NtCurrentTeb",
   // fake exported functions
   "NtPullTransaction",
+  "RtlEnclaveCallDispatch",
 
   // These are not real function, should be filtered out by script
   // TODO:
@@ -26,19 +32,17 @@ const ApisToIgnore = [
   "LdrSetDllManifestProber",
   "RtlEqualLuid",
 
-  "RtlInterlockedPushListSList",
   "RtlpTimeFieldsToTime",
   "RtlpTimeToTimeFields",
   "EtwEnumerateTraceGuids",
-  "DllGetVersion",
 
-  // TODO not ending with space
-  "OpenState",
-  "HeapExtend",
-  "PssWalkMarkerSeek",
-  "DrawFrame",
   // kernel32
   "ResetState",
+  "ResolveDelayLoadedAPI",
+  "ResolveDelayLoadsFromDll",
+
+  // user32
+  "DrawFrame",
 
   // DLL apis present in all DLLs
   "DllGetClassObject",
@@ -46,6 +50,7 @@ const ApisToIgnore = [
   "DllInstall",
   "DllRegisterServer",
   "DllUnregisterServer",
+  "DllGetVersion",
   "GetProxyDllInfo",
   "LdrSystemDllInitBlock",
 
@@ -77,9 +82,6 @@ const ApisToIgnore = [
   "K32InitializeProcessForWsWatch",
   "K32QueryWorkingSet",
   "K32QueryWorkingSetEx",
-
-  "ResolveDelayLoadedAPI",
-  "ResolveDelayLoadsFromDll",
 
   // fake exported
   "InjectKeyboardInput",
@@ -115,11 +117,9 @@ const ApisToIgnore = [
   "GetCertificateSize",
   "fpClosePrinter",
 
-  // gdi32 suffix
-  "GetNumberOfPhysicalMonitors",
-  "GetPhysicalMonitors",
+  // gdi32 non-function
 
-  // pdh suffix
+  // pdh non-function
   "PdhLogServiceControlA",
   "PdhLogServiceControlW",
 
@@ -127,7 +127,7 @@ const ApisToIgnore = [
   "AllocateAndGetTcpExTableFromStack",
   "AllocateAndGetUdpExTableFromStack",
 
-  // setupapi suffix
+  // setupapi non-function
   "ExtensionPropSheetPageProc",
 
   // ws2_32 suffix
@@ -183,7 +183,6 @@ const VaArgApis = [
   "wnsprintfW",
 ];
 
-const FunctionPrefixTable: number[] = [];
 //  32 0x20 Space
 // 126 0x7E ~
 // 127 0x7F DEL
@@ -204,11 +203,23 @@ for (let ch = 32; ch < 127; ch += 1) {
   if (AsciiCode_A <= ch && ch <= AsciiCode_Z) continue;
   // FunctionPrefixTable.push(ch);
 }
+const FunctionPrefixTable: number[] = [];
 FunctionPrefixTable.push(" ".codePointAt(0) ?? 0);
 FunctionPrefixTable.push("\r".codePointAt(0) ?? 0);
 FunctionPrefixTable.push("\n".codePointAt(0) ?? 0);
 FunctionPrefixTable.push("\t".codePointAt(0) ?? 0);
 FunctionPrefixTable.push("*".codePointAt(0) ?? 0);
+FunctionPrefixTable.push(")".codePointAt(0) ?? 0);
+FunctionPrefixTable.push("(".codePointAt(0) ?? 0);
+FunctionPrefixTable.push(";".codePointAt(0) ?? 0);
+FunctionPrefixTable.push(",".codePointAt(0) ?? 0);
+
+const FunctionPrefixRange: SuffixArrayRange[] = [];
+
+let AllMatchedCount = 0;
+
+let FunctionDecl = /[\r\n\t\s]+[;\(].*/;
+let TailCharsMatched = [];
 
 // DbgPrintReturnControlC not present in phnt
 async function exportFiles(
@@ -247,17 +258,37 @@ async function exportFiles(
   let allKeys = Array.from(funcMap.keys()).sort();
   for (const key of allKeys) {
     let keyBuffer = Buffer.from(key, "utf-8");
-    let pattern = Buffer.alloc(keyBuffer.length + 1);
-    pattern.set(keyBuffer, 1);
-    let indexFound = -1;
-    for (const prefix of FunctionPrefixTable) {
-      pattern[0] = prefix;
-      indexFound = binary_search(sa, pattern);
-      if (indexFound >= 0) break;
+    let matchedIndex = [] as number[];
+    for (const prefixRange of FunctionPrefixRange) {
+      let currentRange = prefixRange;
+      for (let i = 0; i < keyBuffer.length; i += 1) {
+        currentRange = binary_search_range(
+          sa,
+          keyBuffer[i],
+          i + 1,
+          currentRange
+        );
+      }
+      for (let i = currentRange.low; i <= currentRange.high; i += 1) {
+        let contentIndex = sa.index[i];
+        if ("AddAccessAllowedAceEx" == keyBuffer.toString("utf8")) {
+          contentIndex = sa.index[i];
+        }
+        let offsetBegin = contentIndex + 1 + keyBuffer.length;
+        if (FunctionPrefixTable.indexOf(sa.content[offsetBegin]) >= 0) {
+          matchedIndex.push(i);
+          break;
+        }
+      }
+      if (matchedIndex.length > 0) break;
     }
-    if (indexFound < 0) {
+    if (matchedIndex.length == 0) {
       funcMap.set(key, 0);
     } else {
+      if (matchedIndex.length > 10) {
+        console.log(`matchedIndex length ${matchedIndex.length}`);
+      }
+      let indexFound = matchedIndex[0];
       let offset = sa.index[indexFound];
       let matched = sa.content.subarray(offset, offset + 128) as Buffer;
       let matched_str = matched.toString("utf-8");
@@ -268,6 +299,7 @@ async function exportFiles(
   let KeysJoin: string[] = [];
   let KeysDelta: string[] = [];
   for (let key of allKeys) {
+    keysToPushPop.push(key);
     if (keysToIgnore.has(key)) continue;
     let value = funcMap.get(key) ?? 0;
     let define_thunks = "DEFINE_THUNK";
@@ -279,7 +311,6 @@ async function exportFiles(
       } else {
         KeysDelta.push(`${define_thunks}(${dllname}, ${key})`);
       }
-      keysToPushPop.push(key);
     }
     keysToIgnore.add(key);
   }
@@ -430,19 +461,18 @@ async function load(): Promise<SuffixArrayLoaded> {
     index: su_index,
     content: win32Headers,
   };
-  let ntdll_index = binary_search(loaded, Buffer.from("stdcall"));
-  if (ntdll_index >= 0) {
-    let offset = su_index[ntdll_index];
-    let matched = win32Headers.subarray(offset, offset + 128);
-    // console.log(matched.toString('utf-8'))
-  }
   return loaded;
 }
 
 async function allMerge() {
   let sa = await load();
-  MergeFile(sa, "x86");
-  MergeFile(sa, "x64");
+  let range = { low: 0, high: sa.content.length - 1 };
+  for (let prefix_char of FunctionPrefixTable) {
+    FunctionPrefixRange.push(binary_search_range(sa, prefix_char, 0, range));
+  }
+  await MergeFile(sa, "x86");
+  await MergeFile(sa, "x64");
+  console.log(AllMatchedCount);
 }
 
 allMerge();
