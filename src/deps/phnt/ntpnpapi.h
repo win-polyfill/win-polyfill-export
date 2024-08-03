@@ -147,6 +147,7 @@ typedef enum _DEVICE_USAGE_NOTIFICATION_TYPE
     DeviceUsageTypeGuestAssigned
 } DEVICE_USAGE_NOTIFICATION_TYPE, *PDEVICE_USAGE_NOTIFICATION_TYPE;
 
+#if (PHNT_VERSION < PHNT_WIN8) || defined(PHNT_ENABLE_ALL)
 NTSYSCALLAPI
 NTSTATUS
 NTAPI
@@ -156,6 +157,7 @@ NtGetPlugPlayEvent(
     _Out_writes_bytes_(EventBufferSize) PPLUGPLAY_EVENT_BLOCK EventBlock,
     _In_ ULONG EventBufferSize
     );
+#endif
 
 NTSYSCALLAPI
 NTSTATUS
