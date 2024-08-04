@@ -40,6 +40,7 @@ const ApisToIgnore = [
   "ResetState",
   "ResolveDelayLoadedAPI",
   "ResolveDelayLoadsFromDll",
+  "DelayLoadFailureHook",
 
   // user32
   "DrawFrame",
@@ -132,17 +133,11 @@ const ApisToIgnore = [
 
   // ws2_32 suffix
   "WEP",
+  // shell32
+  "DuplicateString",
 ];
 
-const ExportData = [
-  "RtlNtdllName",
-  "RtlDosPathSeperatorsString",
-  "RtlAlternateDosPathSeperatorString",
-  "RtlNtPathSeperatorString",
-  "NlsAnsiCodePage",
-  "NlsMbCodePageTag",
-  "NlsMbOemCodePageTag",
-];
+const ExportData = [] as string[];
 
 // These are vaargs or forced cdecl apis
 const VaArgApis = [
@@ -183,6 +178,14 @@ const VaArgApis = [
   "wnsprintfW",
 ];
 
+let AsciiCode__ = "_".codePointAt(0) ?? 0;
+let AsciiCode_A = "A".codePointAt(0) ?? 0;
+let AsciiCode_Z = "Z".codePointAt(0) ?? 0;
+let AsciiCode_a = "a".codePointAt(0) ?? 0;
+let AsciiCode_z = "z".codePointAt(0) ?? 0;
+let AsciiCode_0 = "0".codePointAt(0) ?? 0;
+let AsciiCode_9 = "9".codePointAt(0) ?? 0;
+
 //  32 0x20 Space
 // 126 0x7E ~
 // 127 0x7F DEL
@@ -190,19 +193,40 @@ for (let ch = 32; ch < 127; ch += 1) {
   if (ch == "_".codePointAt(0)) {
     continue;
   }
-  let AsciiCode__ = "_".codePointAt(0) ?? 0;
-  let AsciiCode_A = "A".codePointAt(0) ?? 0;
-  let AsciiCode_Z = "Z".codePointAt(0) ?? 0;
-  let AsciiCode_a = "a".codePointAt(0) ?? 0;
-  let AsciiCode_z = "z".codePointAt(0) ?? 0;
-  let AsciiCode_0 = "0".codePointAt(0) ?? 0;
-  let AsciiCode_9 = "9".codePointAt(0) ?? 0;
   if (ch == AsciiCode__) continue;
   if (AsciiCode_0 <= ch && ch <= AsciiCode_9) continue;
   if (AsciiCode_a <= ch && ch <= AsciiCode_z) continue;
   if (AsciiCode_A <= ch && ch <= AsciiCode_Z) continue;
   // FunctionPrefixTable.push(ch);
 }
+
+let FallbackNames = {
+  DsGetDcClose: "DsGetDcCloseW",
+  InterlockedPushListSList: "InterlockedPushListSListEx",
+  GetEnvironmentStringsA: "GetEnvironmentStrings",
+  CMP_WaitNoPendingInstallEvents: "CM_WaitNoPendingInstallEvents",
+  SystemFunction036: "RtlGenRandom",
+  SystemFunction040: "RtlEncryptMemory",
+  SystemFunction041: "RtlDecryptMemory",
+  GdiEntry1: "DdCreateDirectDrawObject",
+  GdiEntry2: "DdQueryDirectDrawObject",
+  GdiEntry3: "DdDeleteDirectDrawObject",
+  GdiEntry4: "DdCreateSurfaceObject",
+  GdiEntry5: "DdDeleteSurfaceObject",
+  GdiEntry6: "DdResetVisrgn",
+  GdiEntry7: "DdGetDC",
+  GdiEntry8: "DdReleaseDC",
+  GdiEntry9: "DdCreateDIBSection",
+  GdiEntry10: "DdReenableDirectDrawObject",
+  GdiEntry11: "DdAttachSurface",
+  GdiEntry12: "DdUnattachSurface",
+  GdiEntry13: "DdQueryDisplaySettingsUniqueness",
+  GdiEntry14: "DdGetDxHandle",
+  GdiEntry15: "DdSetGammaRamp",
+  GdiEntry16: "DdSwapTextureHandles",
+  GdiEntry17: "DdChangeSurfacePointer",
+} as { [id: string]: string };
+
 const FunctionPrefixTable: number[] = [];
 FunctionPrefixTable.push(" ".codePointAt(0) ?? 0);
 FunctionPrefixTable.push("\r".codePointAt(0) ?? 0);
@@ -216,10 +240,227 @@ FunctionPrefixTable.push(",".codePointAt(0) ?? 0);
 
 const FunctionPrefixRange: SuffixArrayRange[] = [];
 
-let AllMatchedCount = 0;
+function strip_comment_end(str: string): string {
+  let pos = str.indexOf("//");
+  if (pos >= 0) return str.substring(0, pos);
+  return str;
+}
+function strip_comment(ba: string) {
+  let stringList = ba.split("\n");
+  let stringListFinal = [] as string[];
+  for (let s of stringList) {
+    stringListFinal.push(strip_comment_end(s.trim()).trim());
+  }
+  return stringListFinal.join("\n");
+}
 
-let FunctionDecl = /[\r\n\t\s]+[;\(].*/;
-let TailCharsMatched = [];
+// TODO: handle `unsigned char` `unsigned char*` `unsigned long`
+let API_LIST = [
+  "WINAPI",
+  "NTAPI",
+  "STDAPIVCALLTYPE",
+  "STDAPICALLTYPE",
+  "__cdecl",
+  "__CRTDECL",
+  "FASTCALL",
+  "APIENTRY",
+  "CALLBACK",
+  "WINAPIV",
+  "WMIAPI",
+  "EVNTAPI",
+  "NET_API_FUNCTION",
+  "__stdcall",
+  "IMAGEAPI",
+  "JET_API",
+  "NETIOAPI_API_",
+  "__RPC_USER",
+  "STDMETHODCALLTYPE",
+  "WSAAPI",
+  "WSPAPI",
+  "PASCAL",
+  "DWRITE_EXPORT",
+];
+
+let TYPE_LIST = [
+  "DWORD",
+  "BOOL",
+  "unsigned",
+  "LONG64",
+  "NTSTATUS",
+  "ULONG",
+  "CONFIGRET",
+  "int",
+  "HRESULT",
+  "FEATURE_ENABLED_STATE",
+  "UINT32",
+  "void",
+];
+
+function join_pointers(lines: string[]) {
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    if (lines[i].startsWith("*")) {
+      lines[i - 1] = lines[i - 1] + " " + lines[i];
+      lines[i] = "";
+    }
+  }
+  return lines.filter(function (e) {
+    return e.trim().length > 0;
+  });
+}
+
+function split_return_type_lines(ba: string) {
+  ba = ba.replaceAll('unsigned char ', 'BYTE ');
+  ba = ba.replaceAll('unsigned char * ', 'PBYTE ');
+  ba = ba.replaceAll('unsigned long ', 'ULONG ');
+
+  let lines = [] as string[];
+  let chars = "";
+  for (let i = ba.length - 1; i >= 0; i -= 1) {
+    if (" \r\n\v\t".indexOf(ba[i]) >= 0) {
+      if (chars.length > 0) {
+        if (chars !== 'FAR' && !chars.startsWith('#'))
+        {
+          lines.unshift(chars);
+        }
+        chars = "";
+      }
+      continue;
+    }
+    chars = ba[i] + chars;
+    if (ba[i] === ")") {
+      let OpenParenthesesCount = 0;
+      let CloseParenthesesCount = 1;
+      let j = i - 1;
+      for (; j >= 0; j -= 1) {
+        chars = ba[j] + chars;
+        if (ba[j] === "(") OpenParenthesesCount += 1;
+        if (ba[j] === ")") CloseParenthesesCount += 1;
+        if (OpenParenthesesCount === CloseParenthesesCount)
+        {
+          break;
+        }
+      }
+      i = j;
+    }
+  }
+  if (chars.length > 0)
+    lines.unshift(chars)
+  return lines;
+}
+
+// let lines = split_return_type_lines("abc\r\nWINOLEAPI_(_Ret_opt_ _Post_writable_byte_size_(cb)  __drv_allocatesMem(Mem) _Check_return_ LPVOID)");
+
+function find_function_ret_type(
+  ba: string,
+  firstChar: string
+): string | undefined {
+  if (firstChar === ",") {
+    let lines = ba.split(/[,\(]/g).filter(function (e) {
+      return e !== "(" && e !== "," && e.trim().length > 0;
+    });
+    lines = join_pointers(lines.map((x) => x.trim()));
+    let api_type = lines[lines.length - 1];
+    if (api_type === "_ACRTIMP") return lines[lines.length - 3];
+    else if (api_type === "__EMPTY_DECLSPEC") return lines[lines.length - 3];
+    return undefined;
+  } else {
+    let lines = split_return_type_lines(ba)
+    lines = join_pointers(lines);
+    let api_type = lines[lines.length - 1];
+    if (API_LIST.indexOf(api_type) >= 0) return lines[lines.length - 2];
+    if (TYPE_LIST.indexOf(api_type) >= 0) return api_type;
+    if (api_type.startsWith("STDAPI_("))
+      return api_type.substring("STDAPI_(".length, api_type.length - 1);
+    if (api_type === "STDAPI") return "HRESULT";
+    if (api_type === "EVRPUBLIC") return "HRESULT";
+    if (api_type === "WINOLEAPI") return "HRESULT";
+    if (api_type === "WINOLEAUTAPI") return "HRESULT";
+    if (api_type === "SHSTDAPI") return "HRESULT";
+    if (api_type === "SHFOLDERAPI") return "HRESULT";
+    if (api_type === "DWMAPI") return "HRESULT";
+    if (api_type === "PSSTDAPI") return "HRESULT";
+    if (api_type === "THEMEAPI") return "HRESULT";
+    if (api_type === "NETIOAPI_API") return "NETIO_STATUS";
+    if (api_type === "PFAPIENTRY") return "DWORD";
+    if (api_type === "PDH_FUNCTION") return "PDH_STATUS";
+    if (api_type === "LWSTDAPI") return "HRESULT";
+
+    if (api_type.startsWith("NOT_BUILD_WINDOWS_DEPRECATE_NDFAPI_STDAPI("))
+      return "HRESULT";
+    if (api_type.startsWith("SHSTDAPI_("))
+      return api_type.substring("SHSTDAPI_(".length, api_type.length - 1);
+    if (api_type.startsWith("LWSTDAPI_("))
+      return api_type.substring("LWSTDAPI_(".length, api_type.length - 1);
+    if (api_type.startsWith("LWSTDAPIV_("))
+      return api_type.substring("LWSTDAPIV_(".length, api_type.length - 1);
+    if (api_type.startsWith("WINOLEAPI_("))
+      return api_type.substring("WINOLEAPI_(".length, api_type.length - 1);
+    if (api_type.startsWith("DWMAPI_("))
+      return api_type.substring("DWMAPI_(".length, api_type.length - 1);
+    if (api_type.startsWith("PSSTDAPI_("))
+      return api_type.substring("PSSTDAPI_(".length, api_type.length - 1);
+    if (api_type.startsWith("THEMEAPI_("))
+      return api_type.substring("THEMEAPI_(".length, api_type.length - 1);
+
+    return undefined;
+  }
+}
+
+interface TailInfo {
+  firstChar: string;
+  tail: string;
+}
+
+function find_function_tail(ba: string): TailInfo | undefined {
+  let OpenParenthesesCount = 0;
+  let CloseParenthesesCount = 0;
+  let TailFound: string | undefined = undefined;
+  let firstCharNonSpace = "";
+  let i = 0;
+  ba = strip_comment(ba);
+  for (;;) {
+    if (" \t\n\r\v".indexOf(ba[i]) < 0) {
+      if (ba[i] === "(" || ba[i] === ",") {
+        OpenParenthesesCount = 1;
+        firstCharNonSpace = ba[i];
+        i += 1;
+        break;
+      } else if (ba[i] === ")") {
+        OpenParenthesesCount = 0;
+        firstCharNonSpace = ba[i];
+        i += 1;
+        break;
+      }
+      return TailFound;
+    }
+    i += 1;
+  }
+  let beginOffset = i;
+  for (; i < ba.length; i += 1) {
+    if (ba[i] === "(") OpenParenthesesCount += 1;
+    if (ba[i] === ")") CloseParenthesesCount += 1;
+    if (
+      ba[i] === ";" ||
+      (OpenParenthesesCount > 0 &&
+        OpenParenthesesCount == CloseParenthesesCount)
+    ) {
+      if (ba[i] === ")") i += 1;
+      if (firstCharNonSpace == ")") {
+        TailFound = ba.substring(beginOffset, i);
+      } else {
+        TailFound = "(" + ba.substring(beginOffset, i);
+      }
+      break;
+    }
+    if (ba[i] === "{" || ba[i] === "}") return undefined;
+  }
+  if (OpenParenthesesCount == CloseParenthesesCount && TailFound !== undefined)
+    return {
+      firstChar: firstCharNonSpace,
+      tail: TailFound,
+    };
+  return undefined;
+}
 
 // DbgPrintReturnControlC not present in phnt
 async function exportFiles(
@@ -257,7 +498,8 @@ async function exportFiles(
 
   let allKeys = Array.from(funcMap.keys()).sort();
   for (const key of allKeys) {
-    let keyBuffer = Buffer.from(key, "utf-8");
+    const finalKey = (FallbackNames[key] ?? key) as string;
+    let keyBuffer = Buffer.from(finalKey, "utf-8");
     let matchedIndex = [] as number[];
     for (const prefixRange of FunctionPrefixRange) {
       let currentRange = prefixRange;
@@ -271,36 +513,59 @@ async function exportFiles(
       }
       for (let i = currentRange.low; i <= currentRange.high; i += 1) {
         let contentIndex = sa.index[i];
-        if ("AddAccessAllowedAceEx" == keyBuffer.toString("utf8")) {
-          contentIndex = sa.index[i];
-        }
         let offsetBegin = contentIndex + 1 + keyBuffer.length;
-        if (FunctionPrefixTable.indexOf(sa.content[offsetBegin]) >= 0) {
+        let functionMatched =
+          FunctionPrefixTable.indexOf(sa.content[offsetBegin]) >= 0;
+        let functionMatchedAnsi =
+          sa.content[offsetBegin] === AsciiCode_A &&
+          FunctionPrefixTable.indexOf(sa.content[offsetBegin + 1]) >= 0;
+        if (functionMatched || functionMatchedAnsi) {
           matchedIndex.push(i);
-          break;
         }
       }
-      if (matchedIndex.length > 0) break;
     }
-    if (matchedIndex.length == 0) {
+    if (keysToIgnore.has(key)) matchedIndex = [];
+    let tailFound: TailInfo | undefined;
+    let returnTypeFound: string | undefined;
+    for (let i = 0; i < matchedIndex.length; i++) {
+      let indexFound = matchedIndex[i];
+      let offset = sa.index[indexFound];
+      let tailOffset = offset + keyBuffer.length + 1;
+      if (sa.content[tailOffset] === AsciiCode_A) {
+        tailOffset += 1;
+      }
+      //let matched = sa.content.subarray(offset - 5, tailOffset) as Buffer;
+      if (key === "CLIPFORMAT_UserMarshal") {
+        i += 0;
+      }
+      let suffix = sa.content
+        .subarray(tailOffset, tailOffset + 2048)
+        .toString();
+      let prefix = sa.content.subarray(offset - 256, offset).toString();
+      let tailFoundCurrent = find_function_tail(suffix);
+      if (tailFoundCurrent !== undefined) {
+        tailFound = tailFoundCurrent;
+        returnTypeFound = find_function_ret_type(
+          prefix,
+          tailFoundCurrent.firstChar
+        );
+        if (returnTypeFound != undefined) break;
+      }
+    }
+    if (tailFound === undefined) {
       funcMap.set(key, 0);
     } else {
-      if (matchedIndex.length > 10) {
-        console.log(`matchedIndex length ${matchedIndex.length}`);
+      if (returnTypeFound === undefined) {
+        console.log(`Can not find return type for ${key}`);
+        // process.exit();
       }
-      let indexFound = matchedIndex[0];
-      let offset = sa.index[indexFound];
-      let matched = sa.content.subarray(offset, offset + 128) as Buffer;
-      let matched_str = matched.toString("utf-8");
-      offset += 1;
-      // console.log(matched_str);
+      // console.log(`${returnTypeFound} ${key}${tailFound.tail};`);
     }
   }
   let KeysJoin: string[] = [];
   let KeysDelta: string[] = [];
   for (let key of allKeys) {
     keysToPushPop.push(key);
-    if (keysToIgnore.has(key)) continue;
     let value = funcMap.get(key) ?? 0;
     let define_thunks = "DEFINE_THUNK";
     if (ExportData.indexOf(key) >= 0) define_thunks = "DEFINE_THUNK_DATA";
@@ -345,10 +610,16 @@ export async function genWin32Headers() {
     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0",
     true
   );
+  filesWindows = await getFiles("C:/work/study/runtimes/msvcrt/Windows/Include", true)
+  let filesMSVC = await getFiles(
+    "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.40.33807/include", true
+  );
+  filesMSVC = await getFiles("C:/work/study/runtimes/msvcrt/VC/include", true)
 
   let filesHeaders: string[] = Array.prototype.concat(
     filesPhnt.sort(),
-    filesWindows.sort()
+    filesWindows.sort(),
+    filesMSVC.sort()
   );
   let totalSize = 0;
   let buffers: Buffer[] = [];
@@ -445,9 +716,8 @@ async function MergeFile(sa: SuffixArrayLoaded, arch: "x86" | "x64") {
   );
 }
 
-// await genWin32Headers();
-
 async function load(): Promise<SuffixArrayLoaded> {
+  // await genWin32Headers();
   let cacheDir = path.join(docsDir, "cache");
   let win32Headers = await fs.readFile(
     path.join(cacheDir, "win32-api-merged.h.txt")
@@ -472,7 +742,6 @@ async function allMerge() {
   }
   await MergeFile(sa, "x86");
   await MergeFile(sa, "x64");
-  console.log(AllMatchedCount);
 }
 
 allMerge();
