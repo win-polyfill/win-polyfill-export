@@ -1,3 +1,5 @@
+/// <reference types="./c-preprocessor.d.ts" />
+
 import fs from "fs/promises";
 import path from "path";
 import { getFiles, readJson } from "./file-util";
@@ -6,6 +8,7 @@ import {
   SuffixArrayRange,
   binary_search_range,
 } from "./suffix-array";
+import { handle_preprocess } from "./compiler";
 
 interface ExportItem {
   Ordinal: number;
@@ -239,33 +242,35 @@ FunctionPrefixTable.push(";".codePointAt(0) ?? 0);
 FunctionPrefixTable.push(",".codePointAt(0) ?? 0);
 
 const FunctionPrefixRange: SuffixArrayRange[] = [];
-
-function strip_comment_end(str: string): string {
-  let pos = str.indexOf("//");
-  if (pos >= 0) return str.substring(0, pos);
-  return str;
+function removeComments(string: string) {
+  //Takes a string of code, not an actual function.
+  return string.replace(/\/\*[\s\S]*?\*\/|(?<=[^:])\/\/.*|^\/\/.*/g, "").trim(); //Strip comments
 }
+
 function strip_comment(ba: string) {
-  let stringList = ba.split("\n");
-  let stringListFinal = [] as string[];
-  for (let s of stringList) {
-    stringListFinal.push(strip_comment_end(s.trim()).trim());
-  }
-  return stringListFinal.join("\n");
+  ba = ba.replaceAll("/* [in] */", "_In_");
+  ba = ba.replaceAll("/* in */", "_In_");
+  ba = ba.replaceAll("/* [out] */", "_Out_");
+  ba = ba.replaceAll("/* out */", "_Out_");
+  ba = ba.replaceAll("/* [optional][in] */", "_In_opt_");
+  ba = ba.replaceAll("/* [annotation][out] */", " ");
+  ba = ba.replaceAll("/* [out][annotation] */", " ");
+  ba = ba.replaceAll("/* [annotation][in] */", " ");
+  ba = ba.replaceAll("  ", " ");
+  ba = removeComments(ba);
+  let stringList = ba.split("\n").filter((x) => x.trim().length > 0);
+  stringList = stringList.map((x) => x.trimEnd());
+  ba = stringList.join("\n");
+  return ba;
 }
 
 // TODO: handle `unsigned char` `unsigned char*` `unsigned long`
-let API_LIST = [
+let API_LIST_STDCALL = [
   "WINAPI",
   "NTAPI",
-  "STDAPIVCALLTYPE",
   "STDAPICALLTYPE",
-  "__cdecl",
-  "__CRTDECL",
-  "FASTCALL",
   "APIENTRY",
   "CALLBACK",
-  "WINAPIV",
   "WMIAPI",
   "EVNTAPI",
   "NET_API_FUNCTION",
@@ -280,6 +285,8 @@ let API_LIST = [
   "PASCAL",
   "DWRITE_EXPORT",
 ];
+
+let API_LIST_CDECL = ["STDAPIVCALLTYPE", "__cdecl", "__CRTDECL", "WINAPIV"];
 
 let TYPE_LIST = [
   "DWORD",
@@ -296,9 +303,35 @@ let TYPE_LIST = [
   "void",
 ];
 
+let HRESULT_TYPE_LIST = [
+  "STDAPI",
+  "EVRPUBLIC",
+  "WINOLEAPI",
+  "WINOLEAUTAPI",
+  "SHSTDAPI",
+  "SHFOLDERAPI",
+  "DWMAPI",
+  "PSSTDAPI",
+  "THEMEAPI",
+  "LWSTDAPI",
+];
+
+let API_LIST_SUB = [
+  // cdecl
+  "LWSTDAPIV_(",
+  // stdcall
+  "SHSTDAPI_(",
+  "LWSTDAPI_(",
+  "WINOLEAPI_(",
+  "DWMAPI_(",
+  "PSSTDAPI_(",
+  "THEMEAPI_(",
+];
+
 function join_pointers(lines: string[]) {
   for (let i = lines.length - 1; i >= 0; i -= 1) {
-    if (lines[i].startsWith("*")) {
+    let line_i = lines[i];
+    if (line_i.startsWith("*") || line_i.startsWith("const *")) {
       lines[i - 1] = lines[i - 1] + " " + lines[i];
       lines[i] = "";
     }
@@ -309,21 +342,44 @@ function join_pointers(lines: string[]) {
 }
 
 function split_return_type_lines(ba: string) {
-  ba = ba.replaceAll('unsigned char ', 'BYTE ');
-  ba = ba.replaceAll('unsigned char * ', 'PBYTE ');
-  ba = ba.replaceAll('unsigned long ', 'ULONG ');
+  ba = ba.replaceAll("unsigned long long *", "PUINT64 ");
+  ba = ba.replaceAll("unsigned long long ", "UINT64 ");
+  ba = ba.replaceAll("long long *", "PINT64 ");
+  ba = ba.replaceAll("long long ", "INT64 ");
+
+  ba = ba.replaceAll("unsigned int *", "PUINT32 ");
+  ba = ba.replaceAll("unsigned int ", "UINT32 ");
+
+  ba = ba.replaceAll("unsigned short *", "PUINT16 ");
+  ba = ba.replaceAll("unsigned short ", "UINT16 ");
+
+  ba = ba.replaceAll("unsigned char * ", "PUINT8 ");
+  ba = ba.replaceAll("unsigned char ", "UINT8 ");
+
+  ba = ba.replaceAll("unsigned long ", "ULONG ");
+  ba = ba.replaceAll("_CONST_RETURN", "const");
 
   let lines = [] as string[];
   let chars = "";
   for (let i = ba.length - 1; i >= 0; i -= 1) {
+    if (ba[i] === "*") {
+      if (chars.length > 0) lines.unshift(chars);
+      lines.unshift("*");
+      continue;
+    }
+
     if (" \r\n\v\t".indexOf(ba[i]) >= 0) {
       if (chars.length > 0) {
-        if (chars !== 'FAR' && !chars.startsWith('#'))
-        {
+        if (chars !== "FAR" && !chars.startsWith("#")) {
           lines.unshift(chars);
         }
         chars = "";
       }
+      continue;
+    }
+    if (ba[i] === "(") {
+      if (chars.length > 0) lines.unshift(chars);
+      chars = "";
       continue;
     }
     chars = ba[i] + chars;
@@ -335,83 +391,150 @@ function split_return_type_lines(ba: string) {
         chars = ba[j] + chars;
         if (ba[j] === "(") OpenParenthesesCount += 1;
         if (ba[j] === ")") CloseParenthesesCount += 1;
-        if (OpenParenthesesCount === CloseParenthesesCount)
-        {
+        if (OpenParenthesesCount === CloseParenthesesCount) {
           break;
         }
       }
       i = j;
     }
   }
-  if (chars.length > 0)
-    lines.unshift(chars)
+  if (chars.length > 0) lines.unshift(chars);
   return lines;
 }
 
 // let lines = split_return_type_lines("abc\r\nWINOLEAPI_(_Ret_opt_ _Post_writable_byte_size_(cb)  __drv_allocatesMem(Mem) _Check_return_ LPVOID)");
 
-function find_function_ret_type(
-  ba: string,
-  firstChar: string
-): string | undefined {
-  if (firstChar === ",") {
-    let lines = ba.split(/[,\(]/g).filter(function (e) {
-      return e !== "(" && e !== "," && e.trim().length > 0;
-    });
-    lines = join_pointers(lines.map((x) => x.trim()));
-    let api_type = lines[lines.length - 1];
-    if (api_type === "_ACRTIMP") return lines[lines.length - 3];
-    else if (api_type === "__EMPTY_DECLSPEC") return lines[lines.length - 3];
-    return undefined;
-  } else {
-    let lines = split_return_type_lines(ba)
-    lines = join_pointers(lines);
-    let api_type = lines[lines.length - 1];
-    if (API_LIST.indexOf(api_type) >= 0) return lines[lines.length - 2];
-    if (TYPE_LIST.indexOf(api_type) >= 0) return api_type;
-    if (api_type.startsWith("STDAPI_("))
-      return api_type.substring("STDAPI_(".length, api_type.length - 1);
-    if (api_type === "STDAPI") return "HRESULT";
-    if (api_type === "EVRPUBLIC") return "HRESULT";
-    if (api_type === "WINOLEAPI") return "HRESULT";
-    if (api_type === "WINOLEAUTAPI") return "HRESULT";
-    if (api_type === "SHSTDAPI") return "HRESULT";
-    if (api_type === "SHFOLDERAPI") return "HRESULT";
-    if (api_type === "DWMAPI") return "HRESULT";
-    if (api_type === "PSSTDAPI") return "HRESULT";
-    if (api_type === "THEMEAPI") return "HRESULT";
-    if (api_type === "NETIOAPI_API") return "NETIO_STATUS";
-    if (api_type === "PFAPIENTRY") return "DWORD";
-    if (api_type === "PDH_FUNCTION") return "PDH_STATUS";
-    if (api_type === "LWSTDAPI") return "HRESULT";
-
-    if (api_type.startsWith("NOT_BUILD_WINDOWS_DEPRECATE_NDFAPI_STDAPI("))
-      return "HRESULT";
-    if (api_type.startsWith("SHSTDAPI_("))
-      return api_type.substring("SHSTDAPI_(".length, api_type.length - 1);
-    if (api_type.startsWith("LWSTDAPI_("))
-      return api_type.substring("LWSTDAPI_(".length, api_type.length - 1);
-    if (api_type.startsWith("LWSTDAPIV_("))
-      return api_type.substring("LWSTDAPIV_(".length, api_type.length - 1);
-    if (api_type.startsWith("WINOLEAPI_("))
-      return api_type.substring("WINOLEAPI_(".length, api_type.length - 1);
-    if (api_type.startsWith("DWMAPI_("))
-      return api_type.substring("DWMAPI_(".length, api_type.length - 1);
-    if (api_type.startsWith("PSSTDAPI_("))
-      return api_type.substring("PSSTDAPI_(".length, api_type.length - 1);
-    if (api_type.startsWith("THEMEAPI_("))
-      return api_type.substring("THEMEAPI_(".length, api_type.length - 1);
-
-    return undefined;
-  }
+interface ReturnTypeInfo {
+  type: string;
+  conv: string;
 }
 
-interface TailInfo {
+function find_function_ret_type(
+  arch: "x86" | "x64",
+  ba: string,
+  firstChar: string
+): ReturnTypeInfo | undefined {
+  let lines = [] as string[];
+  let return_conv = "__stdcall" as "__stdcall" | "__cdecl" | "__fastcall";
+  let return_type: string | undefined = undefined;
+  do {
+    if (firstChar === ",") {
+      lines = ba.split(/[,\(\r\n]/g).filter(function (e) {
+        return e !== "(" && e !== "," && e.trim().length > 0;
+      });
+      lines = join_pointers(lines.map((x) => x.trim()));
+      let api_type = lines[lines.length - 1];
+      if (api_type === "_ACRTIMP") {
+        let return_policy = lines[lines.length - 2];
+        if (return_policy === "__RETURN_POLICY_DST") {
+          return_type = lines[lines.length - 3];
+        } else if (
+          return_policy === "__DEFINE_CPP_OVERLOAD_STANDARD_NFUNC_0_2_SIZE"
+        ) {
+          return_type = "size_t";
+        } else {
+          console.log(`Failed for return_policy: ${return_policy}`);
+          process.exit(-1);
+        }
+      } else if (api_type === "__EMPTY_DECLSPEC") {
+        return_type = lines[lines.length - 3];
+      }
+      break;
+    } else {
+      lines = split_return_type_lines(ba);
+      lines = join_pointers(lines);
+      let api_type = lines[lines.length - 1];
+      if (api_type === "FASTCALL") {
+        if (arch === "x86") {
+          return_conv = "__fastcall";
+        } else {
+          return_conv = "__cdecl";
+        }
+        return_type = lines[lines.length - 2];
+        break;
+      }
+
+      if (API_LIST_STDCALL.indexOf(api_type) >= 0) {
+        let inline_token = lines[lines.length - 3];
+        if (inline_token === "inline") {
+          break;
+        }
+        return_type = lines[lines.length - 2];
+        break;
+      }
+      if (API_LIST_CDECL.indexOf(api_type) >= 0) {
+        let inline_token = lines[lines.length - 3];
+        if (inline_token === "inline") {
+          break;
+        }
+        return_type = lines[lines.length - 2];
+        return_conv = "__cdecl";
+        break;
+      }
+      if (TYPE_LIST.indexOf(api_type) >= 0) {
+        return_conv = "__cdecl";
+        return_type = api_type;
+        break;
+      }
+      if (api_type.startsWith("STDAPI_(")) {
+        return_type = api_type.substring(
+          "STDAPI_(".length,
+          api_type.length - 1
+        );
+        break;
+      }
+      if (HRESULT_TYPE_LIST.indexOf(api_type) >= 0) {
+        return_type = "HRESULT";
+        break;
+      }
+      if (api_type.startsWith("NOT_BUILD_WINDOWS_DEPRECATE_NDFAPI_STDAPI(")) {
+        return_type = "HRESULT";
+        break;
+      }
+
+      if (api_type === "NETIOAPI_API") {
+        return_type = "NETIO_STATUS";
+        break;
+      }
+      if (api_type === "PFAPIENTRY") {
+        return_type = "DWORD";
+        break;
+      }
+      if (api_type === "PDH_FUNCTION") {
+        return_type = "PDH_STATUS";
+        break;
+      }
+      for (let i = 0; i < API_LIST_SUB.length; i += 1) {
+        let item = API_LIST_SUB[i];
+        if (api_type.startsWith(item)) {
+          if (i < 1) {
+            return_conv = "__cdecl";
+          }
+          return_type = api_type.substring(item.length, api_type.length - 1);
+          break;
+        }
+      }
+      // do not add more
+    }
+  } while (0);
+  if (return_type === undefined) {
+    return undefined;
+  }
+  return {
+    conv: return_conv,
+    type: return_type,
+  };
+}
+
+interface ParameterInfo {
   firstChar: string;
   tail: string;
 }
 
-function find_function_tail(ba: string): TailInfo | undefined {
+async function find_function_tail(
+  key: string,
+  ba: string
+): Promise<ParameterInfo | undefined> {
   let OpenParenthesesCount = 0;
   let CloseParenthesesCount = 0;
   let TailFound: string | undefined = undefined;
@@ -454,16 +577,32 @@ function find_function_tail(ba: string): TailInfo | undefined {
     }
     if (ba[i] === "{" || ba[i] === "}") return undefined;
   }
-  if (OpenParenthesesCount == CloseParenthesesCount && TailFound !== undefined)
+  if (
+    OpenParenthesesCount == CloseParenthesesCount &&
+    TailFound !== undefined
+  ) {
+    let TailFoundFinal = await handle_preprocess(TailFound);
+    TailFoundFinal = TailFoundFinal.trim();
+    if (TailFoundFinal.indexOf("&") >= 0) {
+      // console.warn(`${key} have &`)
+      return undefined;
+    }
     return {
       firstChar: firstCharNonSpace,
-      tail: TailFound,
+      tail: TailFoundFinal,
     };
+  }
   return undefined;
 }
 
+interface MergeResult {
+  decls: string
+};
+
 // DbgPrintReturnControlC not present in phnt
 async function exportFiles(
+  mergeResult: MergeResult,
+  arch: "x86" | "x64",
   dllname: string,
   gensDir: string,
   filesExports: string[],
@@ -525,8 +664,8 @@ async function exportFiles(
       }
     }
     if (keysToIgnore.has(key)) matchedIndex = [];
-    let tailFound: TailInfo | undefined;
-    let returnTypeFound: string | undefined;
+    let tailFound: ParameterInfo | undefined;
+    let returnTypeFound: ReturnTypeInfo | undefined;
     for (let i = 0; i < matchedIndex.length; i++) {
       let indexFound = matchedIndex[i];
       let offset = sa.index[indexFound];
@@ -535,17 +674,18 @@ async function exportFiles(
         tailOffset += 1;
       }
       //let matched = sa.content.subarray(offset - 5, tailOffset) as Buffer;
-      if (key === "CLIPFORMAT_UserMarshal") {
+      if (key === "SHPropStgReadMultiple") {
         i += 0;
       }
       let suffix = sa.content
         .subarray(tailOffset, tailOffset + 2048)
         .toString();
       let prefix = sa.content.subarray(offset - 256, offset).toString();
-      let tailFoundCurrent = find_function_tail(suffix);
+      let tailFoundCurrent = await find_function_tail(key, suffix);
       if (tailFoundCurrent !== undefined) {
         tailFound = tailFoundCurrent;
         returnTypeFound = find_function_ret_type(
+          arch,
           prefix,
           tailFoundCurrent.firstChar
         );
@@ -557,9 +697,10 @@ async function exportFiles(
     } else {
       if (returnTypeFound === undefined) {
         console.log(`Can not find return type for ${key}`);
-        // process.exit();
+        process.exit();
       }
-      // console.log(`${returnTypeFound} ${key}${tailFound.tail};`);
+      // console.log(`${returnTypeFound}`);
+      mergeResult.decls = mergeResult.decls + `${returnTypeFound.type} ${returnTypeFound.conv} ${key}${tailFound.tail};\n`
     }
   }
   let KeysJoin: string[] = [];
@@ -610,11 +751,15 @@ export async function genWin32Headers() {
     "C:/Program Files (x86)/Windows Kits/10/Include/10.0.26100.0",
     true
   );
-  filesWindows = await getFiles("C:/work/study/runtimes/msvcrt/Windows/Include", true)
-  let filesMSVC = await getFiles(
-    "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.40.33807/include", true
+  filesWindows = await getFiles(
+    "C:/work/study/runtimes/msvcrt/Windows/Include",
+    true
   );
-  filesMSVC = await getFiles("C:/work/study/runtimes/msvcrt/VC/include", true)
+  let filesMSVC = await getFiles(
+    "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.40.33807/include",
+    true
+  );
+  filesMSVC = await getFiles("C:/work/study/runtimes/msvcrt/VC/include", true);
 
   let filesHeaders: string[] = Array.prototype.concat(
     filesPhnt.sort(),
@@ -687,7 +832,7 @@ const DllNameList = [
   "zipfldr",
 ];
 
-async function MergeFile(sa: SuffixArrayLoaded, arch: "x86" | "x64") {
+async function MergeFile(sa: SuffixArrayLoaded, mergeResult: MergeResult, arch: "x86" | "x64") {
   let keysToIgnore = new Set<string>(ApisToIgnore);
   let docsDirArch = path.join(docsDir, "gens", arch);
   let filesExports = await getFiles(docsDirArch);
@@ -695,6 +840,8 @@ async function MergeFile(sa: SuffixArrayLoaded, arch: "x86" | "x64") {
   let keysToPushPop: string[] = [];
   for (let name of DllNameList) {
     await exportFiles(
+      mergeResult,
+      arch,
       name,
       gensDir,
       filesExports,
@@ -740,8 +887,12 @@ async function allMerge() {
   for (let prefix_char of FunctionPrefixTable) {
     FunctionPrefixRange.push(binary_search_range(sa, prefix_char, 0, range));
   }
-  await MergeFile(sa, "x86");
-  await MergeFile(sa, "x64");
+  let mergeResult: MergeResult = {
+    decls: ''
+  };
+  // await MergeFile(sa, "x86");
+  await MergeFile(sa, mergeResult, "x64");
+  await fs.writeFile('decs.c', mergeResult.decls)
 }
 
 allMerge();

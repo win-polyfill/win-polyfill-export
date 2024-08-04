@@ -66,6 +66,17 @@
         "ts-node/register"
       ],
       "program": "c:\\work\\study\\runtimes\\win-polyfill-export\\scripts\\suffix-array.ts"
+    },
+    {
+      "type": "node",
+      "name": "debug compiler.ts",
+      "request": "launch",
+      "args": [],
+      "runtimeArgs": [
+        "-r",
+        "ts-node/register"
+      ],
+      "program": "c:\\work\\study\\runtimes\\win-polyfill-export\\scripts\\compiler.ts"
     }
   ]
 }
