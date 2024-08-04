@@ -1,5 +1,3 @@
-/// <reference types="./c-preprocessor.d.ts" />
-
 import fs from "fs/promises";
 import path from "path";
 import { getFiles, readJson } from "./file-util";
