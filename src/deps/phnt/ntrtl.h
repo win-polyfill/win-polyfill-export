@@ -6146,10 +6146,10 @@ RtlIpv6StringToAddressExW(
 
 #define RtlIpv4AddressToString RtlIpv4AddressToStringW
 #define RtlIpv4AddressToStringEx RtlIpv4AddressToStringExW
-#define RtlIpv6AddressToString RtlIpv6AddressToStringW
-#define RtlIpv6AddressToStringEx RtlIpv6AddressToStringExW
 #define RtlIpv4StringToAddress RtlIpv4StringToAddressW
 #define RtlIpv4StringToAddressEx RtlIpv4StringToAddressExW
+#define RtlIpv6AddressToString RtlIpv6AddressToStringW
+#define RtlIpv6AddressToStringEx RtlIpv6AddressToStringExW
 #define RtlIpv6StringToAddress RtlIpv6StringToAddressW
 #define RtlIpv6StringToAddressEx RtlIpv6StringToAddressExW
 
