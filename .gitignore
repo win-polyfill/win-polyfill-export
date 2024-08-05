@@ -5,3 +5,9 @@ node_modules
 /docs/*.zip
 /docs/gens
 /docs/cache
+/gens/x64/gen-exports-decls.h
+/gens/x64/gen-exports-decls.h.index.txt
+/gens/x64/gen-exports-decls.inc.h
+/gens/x86/gen-exports-decls.h
+/gens/x86/gen-exports-decls.h.index.txt
+/gens/x86/gen-exports-decls.inc.h

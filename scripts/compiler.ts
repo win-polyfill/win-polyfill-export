@@ -224,7 +224,10 @@ export class Compiler {
         if (match === null || match[1].length == 0)
           throw new Error(`wrong pragma format`);
         else this.popMacro(match[1]);
-      } else throw new Error(`unknown pragma "${text}"`);
+      } else {
+        // throw new Error(`unknown pragma "${text}"`);
+        // all other pragma are ignored
+      }
     });
 
     this.createDirective("error", (text: string): void => {
@@ -639,7 +642,10 @@ export async function preprocessor(
   return deferred.promise;
 }
 
-export async function handle_preprocess(str: string): Promise<string> {
+export async function handle_preprocess(
+  str: string,
+  key?: string
+): Promise<string> {
   try {
     let options = {
       constants: constants,
@@ -648,7 +654,15 @@ export async function handle_preprocess(str: string): Promise<string> {
     let compiler = new Compiler(options);
     return compiler.compile(str);
   } catch (error) {
-    console.log(`Handle preprocessor for ${str} ${error} failed`);
+    if (error instanceof Error) {
+      console.log(
+        `Handle preprocessor for ${key} code:"${str}" ${error} ${error.stack} failed`
+      );
+    } else {
+      console.log(
+        `Handle preprocessor for ${key} code:"${str}" ${error} failed`
+      );
+    }
     process.exit(-1);
   }
 }

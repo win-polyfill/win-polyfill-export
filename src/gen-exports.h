@@ -11,6 +11,7 @@
 
 #define PHNT_RTL_BYTESWAP
 #define PHNT_ENABLE_ALL
+#define PHNT_NO_INLINE_ACCESSES_GRANTED
 
 #ifdef __cplusplus
 #define abs abs_none
@@ -42,14 +43,6 @@
 #include <string.h>
 #include <wchar.h>
 
-#define NTSTATUS_DEFINED
-typedef enum : int32_t
-{
-    NTSTATUS__XXX_SOMETHING
-} NTSTATUS;
-typedef NTSTATUS *PNTSTATUS;
-#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
-
 #define _NTRTL_FWD_H
 #include "win-polyfill-core/nt.h"
 
@@ -58,6 +51,7 @@ typedef NTSTATUS *PNTSTATUS;
 #include <callobj.h>
 #include <messagedispatcherapi.h>
 #include <rpcproxy.h>
+#include <guiddef.h>
 
 // dxva2
 #include <dxvahd.h>
@@ -119,9 +113,11 @@ typedef NTSTATUS *PNTSTATUS;
 #include <usp10.h>
 #include <winddi.h>
 #include <wingdi.h>
-#include <winppi.h>
 
 #include <ddrawint.h>
+
+EXTERN_C_START
+#include <winppi.h>
 typedef PDD_HALINFO LPDDHALINFO;
 typedef PDD_CALLBACKS LPDDHAL_DDCALLBACKS;
 typedef PDD_PALETTECALLBACKS LPDDHAL_DDPALETTECALLBACKS;
@@ -137,9 +133,18 @@ typedef PDD_NTCALLBACKS LPDDHAL_DDNTCALLBACKS;
 typedef struct _DDHAL_DDEXEBUFCALLBACKS FAR *LPDDHAL_DDEXEBUFCALLBACKS;
 typedef struct _VIDMEM FAR *LPVIDMEM;
 #include <ddrawgdi.h>
+EXTERN_C_END
 
 #include <dsgetdc.h>
 #include <dsrole.h>
 #include <icmpapi.h>
 
 #include "gen-exports-fixes.h"
+
+#undef MODULEENTRY32
+#undef PMODULEENTRY32
+#undef LPMODULEENTRY32
+
+#undef PROCESSENTRY32
+#undef PPROCESSENTRY32
+#undef LPPROCESSENTRY32

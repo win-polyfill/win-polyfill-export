@@ -3,7 +3,6 @@
 #include <esent.h>
 #include <windows.h>
 
-
 EXTERN_C_START
 
 JET_ERR JET_API JetAddColumn(
@@ -176,15 +175,15 @@ JET_ERR JET_API JetExternalRestore2(
     _In_ JET_PFNSTATUS pfn);
 
 JET_ERR JET_API JetGetAttachInfo(
-    _Out_writes_bytes_to_opt_(cbMax, *pcbActual) JET_PVOID pv,
+    JET_PSTR szzDatabases,
     _In_ JET_UINT32 cbMax,
     _Out_opt_ JET_UINT32 *pcbActual);
 
 JET_ERR JET_API JetGetAttachInfoInstance(
-    _In_ JET_INSTANCE instance,
-    _Out_writes_bytes_to_opt_(cbMax, *pcbActual) JET_PVOID pv,
-    _In_ JET_UINT32 cbMax,
-    _Out_opt_ JET_UINT32 *pcbActual);
+    JET_INSTANCE instance,
+    JET_PSTR szzDatabases,
+    JET_UINT32 cbMax,
+    JET_UINT32 *pcbActual);
 
 JET_ERR JET_API JetGetColumnInfo(
     _In_ JET_SESID sesid,
@@ -227,23 +226,21 @@ JET_ERR JET_API JetGetInstanceInfo(
     _Out_ JET_UINT32 *pcInstanceInfo,
     _Outptr_result_buffer_(*pcInstanceInfo) JET_INSTANCE_INFO_A **paInstanceInfo);
 
-JET_ERR JET_API JetGetLogInfo(
-    _Out_writes_bytes_to_opt_(cbMax, *pcbActual) JET_PVOID pv,
-    _In_ JET_UINT32 cbMax,
-    _Out_opt_ JET_UINT32 *pcbActual);
+JET_ERR JET_API
+JetGetLogInfo(JET_PSTR szzLogs, _In_ JET_UINT32 cbMax, _Out_opt_ JET_UINT32 *pcbActual);
 
 JET_ERR JET_API JetGetLogInfoInstance(
     _In_ JET_INSTANCE instance,
-    _Out_writes_bytes_to_opt_(cbMax, *pcbActual) JET_PVOID pv,
+    JET_PSTR szzLogs,
     _In_ JET_UINT32 cbMax,
     _Out_opt_ JET_UINT32 *pcbActual);
 
 JET_ERR JET_API JetGetLogInfoInstance2(
-    _In_ JET_INSTANCE instance,
-    _Out_writes_bytes_to_opt_(cbMax, *pcbActual) JET_PVOID pv,
-    _In_ JET_UINT32 cbMax,
-    _Out_opt_ JET_UINT32 *pcbActual,
-    _Inout_opt_ JET_LOGINFO_A *pLogInfo);
+    JET_INSTANCE instance,
+    JET_PSTR szzLogs,
+    JET_UINT32 cbMax,
+    JET_UINT32 *pcbActual,
+    JET_LOGINFO_A *pLogInfo);
 
 JET_ERR JET_API JetGetObjectInfo(
     _In_ JET_SESID sesid,
@@ -287,10 +284,10 @@ JET_ERR JET_API JetGetTableInfo(
     _In_ JET_UINT32 InfoLevel);
 
 JET_ERR JET_API JetGetTruncateLogInfoInstance(
-    _In_ JET_INSTANCE instance,
-    _Out_writes_bytes_to_opt_(cbMax, *pcbActual) JET_PVOID pv,
-    _In_ JET_UINT32 cbMax,
-    _Out_opt_ JET_UINT32 *pcbActual);
+    JET_INSTANCE instance,
+    JET_PSTR szzLogs,
+    JET_UINT32 cbMax,
+    JET_UINT32 *pcbActual);
 
 JET_ERR JET_API JetInit3(
     _Inout_opt_ JET_INSTANCE *pinstance,

@@ -114,10 +114,17 @@ void buildSuffixArray(int *su_index, struct suffix *payload, char *txt, int n)
     }
 }
 // Driver program to test above functions
-int main()
+int main(int argc, const char **argv)
 {
-    auto f = fopen("docs/win32-api-merged.h.txt", "rb");
-    auto f_output = fopen("docs/win32-api-merged.h.index.txt", "wb");
+    auto input_name = "docs/win32-api-merged.h.txt";
+    if (argc > 1) {
+        input_name = argv[1];
+    }
+    auto f = fopen(input_name, "rb");
+    auto output_name = "docs/win32-api-merged.h.index.txt";
+    if (argc > 2) {
+        output_name = argv[2];
+    }
     if (f == nullptr)
     {
         puts("open docs/win32-api-merged.h.txt failed\n");
@@ -151,7 +158,9 @@ int main()
         double cpi = (double)(stop - start) / (n * log2(n));
         puts("|----------:|:----------:|:------------:|");
         printf("| `%7d` |   `%5.3f`  | `%0.8f` |\n", n, time, cpi);
+        auto f_output = fopen(output_name, "wb");
         fwrite(suffixArr, sizeof(int), n, f_output);
+        fclose(f_output);
 #if 1
         delete txt;
 #else
@@ -161,7 +170,6 @@ int main()
         delete suffixArr;
     }
     fclose(f);
-    fclose(f_output);
 
     // Following is suffix array for banana
     // 5 3 1 0 4 2

@@ -1,12 +1,12 @@
-import fs from "fs/promises";
+﻿import fs from "fs/promises";
 import path from "path";
 import { getFiles, readJson } from "./file-util";
 import {
   SuffixArrayLoaded,
   SuffixArrayRange,
   binary_search_range,
+  binary_search,
 } from "./suffix-array";
-import { handle_preprocess } from "./compiler";
 
 interface ExportItem {
   Ordinal: number;
@@ -15,6 +15,7 @@ interface ExportItem {
   VirtualAddress: number;
   ForwardedName: string;
 }
+
 const ApisToIgnore = [
   // ntdll
   // inlined functions
@@ -138,477 +139,345 @@ const ApisToIgnore = [
   "DuplicateString",
 ];
 
-const ExportData = [] as string[];
-
-// These are vaargs or forced cdecl apis
-const VaArgApis = [
-  // ntdll vaarg
-  "DbgPrint",
-  "DbgPrintEx",
-  "DbgPrintReturnControlC",
-  "RtlInitializeSidEx",
-  "_snprintf",
-  "swprintf",
-  "_snwprintf",
-  "sprintf",
-  "sscanf",
-  "_snprintf_s",
-  "_snscanf_s",
-  "_snwprintf_s",
-  "_snwscanf_s",
-  "_swprintf",
-  "sprintf_s",
-  "sscanf_s",
-  "swprintf_s",
-  "swscanf_s",
-  // advapi32 vaarg
-  "TraceMessage",
-  // shell32 vaarg
-  "ShellMessageBoxA",
-  "ShellMessageBoxW",
-  // user32 vaarg
-  "wsprintfA",
-  "wsprintfW",
-  // netapi32 vaarg
-  "RxRemoteApi",
-  // setupapi vaarg
-  "SetupWriteTextLog",
-  "SetupWriteTextLogError",
-  // shlwapi
-  "wnsprintfA",
-  "wnsprintfW",
-];
-
-let AsciiCode__ = "_".codePointAt(0) ?? 0;
-let AsciiCode_A = "A".codePointAt(0) ?? 0;
-let AsciiCode_Z = "Z".codePointAt(0) ?? 0;
-let AsciiCode_a = "a".codePointAt(0) ?? 0;
-let AsciiCode_z = "z".codePointAt(0) ?? 0;
-let AsciiCode_0 = "0".codePointAt(0) ?? 0;
-let AsciiCode_9 = "9".codePointAt(0) ?? 0;
-
 //  32 0x20 Space
 // 126 0x7E ~
 // 127 0x7F DEL
-for (let ch = 32; ch < 127; ch += 1) {
-  if (ch == "_".codePointAt(0)) {
-    continue;
-  }
-  if (ch == AsciiCode__) continue;
-  if (AsciiCode_0 <= ch && ch <= AsciiCode_9) continue;
-  if (AsciiCode_a <= ch && ch <= AsciiCode_z) continue;
-  if (AsciiCode_A <= ch && ch <= AsciiCode_Z) continue;
-  // FunctionPrefixTable.push(ch);
-}
-
-let FallbackNames = {
-  DsGetDcClose: "DsGetDcCloseW",
-  InterlockedPushListSList: "InterlockedPushListSListEx",
-  GetEnvironmentStringsA: "GetEnvironmentStrings",
-  CMP_WaitNoPendingInstallEvents: "CM_WaitNoPendingInstallEvents",
-  SystemFunction036: "RtlGenRandom",
-  SystemFunction040: "RtlEncryptMemory",
-  SystemFunction041: "RtlDecryptMemory",
-  GdiEntry1: "DdCreateDirectDrawObject",
-  GdiEntry2: "DdQueryDirectDrawObject",
-  GdiEntry3: "DdDeleteDirectDrawObject",
-  GdiEntry4: "DdCreateSurfaceObject",
-  GdiEntry5: "DdDeleteSurfaceObject",
-  GdiEntry6: "DdResetVisrgn",
-  GdiEntry7: "DdGetDC",
-  GdiEntry8: "DdReleaseDC",
-  GdiEntry9: "DdCreateDIBSection",
-  GdiEntry10: "DdReenableDirectDrawObject",
-  GdiEntry11: "DdAttachSurface",
-  GdiEntry12: "DdUnattachSurface",
-  GdiEntry13: "DdQueryDisplaySettingsUniqueness",
-  GdiEntry14: "DdGetDxHandle",
-  GdiEntry15: "DdSetGammaRamp",
-  GdiEntry16: "DdSwapTextureHandles",
-  GdiEntry17: "DdChangeSurfacePointer",
-} as { [id: string]: string };
 
 const FunctionPrefixTable: number[] = [];
 FunctionPrefixTable.push(" ".codePointAt(0) ?? 0);
 FunctionPrefixTable.push("\r".codePointAt(0) ?? 0);
 FunctionPrefixTable.push("\n".codePointAt(0) ?? 0);
 FunctionPrefixTable.push("\t".codePointAt(0) ?? 0);
+FunctionPrefixTable.push("\v".codePointAt(0) ?? 0);
 FunctionPrefixTable.push("*".codePointAt(0) ?? 0);
 FunctionPrefixTable.push(")".codePointAt(0) ?? 0);
 FunctionPrefixTable.push("(".codePointAt(0) ?? 0);
 FunctionPrefixTable.push(";".codePointAt(0) ?? 0);
-FunctionPrefixTable.push(",".codePointAt(0) ?? 0);
+FunctionPrefixTable.push("}".codePointAt(0) ?? 0);
 
-const FunctionPrefixRange: SuffixArrayRange[] = [];
-function removeComments(string: string) {
-  //Takes a string of code, not an actual function.
-  return string.replace(/\/\*[\s\S]*?\*\/|(?<=[^:])\/\/.*|^\/\/.*/g, "").trim(); //Strip comments
-}
-
-function strip_comment(ba: string) {
-  ba = ba.replaceAll("/* [in] */", "_In_");
-  ba = ba.replaceAll("/* in */", "_In_");
-  ba = ba.replaceAll("/* [out] */", "_Out_");
-  ba = ba.replaceAll("/* out */", "_Out_");
-  ba = ba.replaceAll("/* [optional][in] */", "_In_opt_");
-  ba = ba.replaceAll("/* [annotation][out] */", " ");
-  ba = ba.replaceAll("/* [out][annotation] */", " ");
-  ba = ba.replaceAll("/* [annotation][in] */", " ");
-  ba = ba.replaceAll("  ", " ");
-  ba = removeComments(ba);
-  let stringList = ba.split("\n").filter((x) => x.trim().length > 0);
-  stringList = stringList.map((x) => x.trimEnd());
-  ba = stringList.join("\n");
-  return ba;
-}
-
-// TODO: handle `unsigned char` `unsigned char*` `unsigned long`
-let API_LIST_STDCALL = [
-  "WINAPI",
-  "NTAPI",
-  "STDAPICALLTYPE",
-  "APIENTRY",
-  "CALLBACK",
-  "WMIAPI",
-  "EVNTAPI",
-  "NET_API_FUNCTION",
-  "__stdcall",
-  "IMAGEAPI",
-  "JET_API",
-  "NETIOAPI_API_",
-  "__RPC_USER",
-  "STDMETHODCALLTYPE",
-  "WSAAPI",
-  "WSPAPI",
-  "PASCAL",
-  "DWRITE_EXPORT",
-];
-
-let API_LIST_CDECL = ["STDAPIVCALLTYPE", "__cdecl", "__CRTDECL", "WINAPIV"];
-
-let TYPE_LIST = [
-  "DWORD",
-  "BOOL",
-  "unsigned",
-  "LONG64",
-  "NTSTATUS",
-  "ULONG",
-  "CONFIGRET",
-  "int",
-  "HRESULT",
-  "FEATURE_ENABLED_STATE",
-  "UINT32",
-  "void",
-];
-
-let HRESULT_TYPE_LIST = [
-  "STDAPI",
-  "EVRPUBLIC",
-  "WINOLEAPI",
-  "WINOLEAUTAPI",
-  "SHSTDAPI",
-  "SHFOLDERAPI",
-  "DWMAPI",
-  "PSSTDAPI",
-  "THEMEAPI",
-  "LWSTDAPI",
-];
-
-let API_LIST_SUB = [
-  // cdecl
-  "LWSTDAPIV_(",
-  // stdcall
-  "SHSTDAPI_(",
-  "LWSTDAPI_(",
-  "WINOLEAPI_(",
-  "DWMAPI_(",
-  "PSSTDAPI_(",
-  "THEMEAPI_(",
-];
-
-function join_pointers(lines: string[]) {
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    let line_i = lines[i];
-    if (line_i.startsWith("*") || line_i.startsWith("const *")) {
-      lines[i - 1] = lines[i - 1] + " " + lines[i];
-      lines[i] = "";
-    }
-  }
-  return lines.filter(function (e) {
-    return e.trim().length > 0;
-  });
-}
-
-function split_return_type_lines(ba: string) {
-  ba = ba.replaceAll("unsigned long long *", "PUINT64 ");
-  ba = ba.replaceAll("unsigned long long ", "UINT64 ");
-  ba = ba.replaceAll("long long *", "PINT64 ");
-  ba = ba.replaceAll("long long ", "INT64 ");
-
-  ba = ba.replaceAll("unsigned int *", "PUINT32 ");
-  ba = ba.replaceAll("unsigned int ", "UINT32 ");
-
-  ba = ba.replaceAll("unsigned short *", "PUINT16 ");
-  ba = ba.replaceAll("unsigned short ", "UINT16 ");
-
-  ba = ba.replaceAll("unsigned char * ", "PUINT8 ");
-  ba = ba.replaceAll("unsigned char ", "UINT8 ");
-
-  ba = ba.replaceAll("unsigned long ", "ULONG ");
-  ba = ba.replaceAll("_CONST_RETURN", "const");
-
-  let lines = [] as string[];
-  let chars = "";
-  for (let i = ba.length - 1; i >= 0; i -= 1) {
-    if (ba[i] === "*") {
-      if (chars.length > 0) lines.unshift(chars);
-      lines.unshift("*");
-      continue;
-    }
-
-    if (" \r\n\v\t".indexOf(ba[i]) >= 0) {
-      if (chars.length > 0) {
-        if (chars !== "FAR" && !chars.startsWith("#")) {
-          lines.unshift(chars);
-        }
-        chars = "";
-      }
-      continue;
-    }
-    if (ba[i] === "(") {
-      if (chars.length > 0) lines.unshift(chars);
-      chars = "";
-      continue;
-    }
-    chars = ba[i] + chars;
-    if (ba[i] === ")") {
-      let OpenParenthesesCount = 0;
-      let CloseParenthesesCount = 1;
-      let j = i - 1;
-      for (; j >= 0; j -= 1) {
-        chars = ba[j] + chars;
-        if (ba[j] === "(") OpenParenthesesCount += 1;
-        if (ba[j] === ")") CloseParenthesesCount += 1;
-        if (OpenParenthesesCount === CloseParenthesesCount) {
-          break;
-        }
-      }
-      i = j;
-    }
-  }
-  if (chars.length > 0) lines.unshift(chars);
-  return lines;
-}
-
-// let lines = split_return_type_lines("abc\r\nWINOLEAPI_(_Ret_opt_ _Post_writable_byte_size_(cb)  __drv_allocatesMem(Mem) _Check_return_ LPVOID)");
-
-interface ReturnTypeInfo {
+interface FunctionArg {
   type: string;
-  conv: string;
+  name: string;
 }
 
-function find_function_ret_type(
-  arch: "x86" | "x64",
-  ba: string,
-  firstChar: string
-): ReturnTypeInfo | undefined {
-  let lines = [] as string[];
-  let return_conv = "__stdcall" as "__stdcall" | "__cdecl" | "__fastcall";
-  let return_type: string | undefined = undefined;
-  do {
-    if (firstChar === ",") {
-      lines = ba.split(/[,\(\r\n]/g).filter(function (e) {
-        return e !== "(" && e !== "," && e.trim().length > 0;
-      });
-      lines = join_pointers(lines.map((x) => x.trim()));
-      let api_type = lines[lines.length - 1];
-      if (api_type === "_ACRTIMP") {
-        let return_policy = lines[lines.length - 2];
-        if (return_policy === "__RETURN_POLICY_DST") {
-          return_type = lines[lines.length - 3];
-        } else if (
-          return_policy === "__DEFINE_CPP_OVERLOAD_STANDARD_NFUNC_0_2_SIZE"
-        ) {
-          return_type = "size_t";
-        } else {
-          console.log(`Failed for return_policy: ${return_policy}`);
-          process.exit(-1);
-        }
-      } else if (api_type === "__EMPTY_DECLSPEC") {
-        return_type = lines[lines.length - 3];
+interface FunctionInfo {
+  conv: string;
+  key: string;
+  return_type: string;
+  has_dllexport: boolean;
+  has_dllimport: boolean;
+  is_vaarg: boolean;
+  is_data: boolean;
+  args: FunctionArg[];
+  argsMerged: string[];
+  body: string;
+  decls: string;
+}
+
+const CONV_LIST = ["__stdcall", "__cdecl", "__fastcall"];
+const PrimitiveTypesC = [
+  "void",
+  "short",
+  "int",
+  "char",
+  "const",
+  "unsigned",
+  "long",
+  "wchar_t",
+];
+
+const PrimitiveTypePrefixes = ["struct", "enum", "union"];
+
+function SplitType(ba: string): string[] {
+  let type = "";
+  let typeList = [];
+  for (let i = 0; i < ba.length; i += 1) {
+    let ch = ba[i];
+    if (" \v\t\r\n*[]".indexOf(ch) >= 0) {
+      if (type.length > 0) {
+        typeList.push(type);
+        type = "";
+      }
+      if ("*[]".indexOf(ch) >= 0) {
+        typeList.push(ch);
+      }
+      continue;
+    }
+    type += ch;
+  }
+  if (type.length > 0) {
+    typeList.push(type);
+  }
+  return typeList;
+}
+
+function find_function_ret_type(ba: string, info: Partial<FunctionInfo>) {
+  info.conv = "__cdecl";
+  info.return_type = undefined;
+  info.has_dllexport = false;
+  info.has_dllimport = false;
+
+  let lines = SplitType(ba);
+  for (let k = lines.length - 1; k > 0; k -= 1) {
+    let line = lines[k];
+    if (line === "") continue;
+    if (line === "__declspec(dllexport)") {
+      info.has_dllexport = true;
+      continue;
+    }
+    if (line === "__declspec(dllimport)") {
+      info.has_dllimport = true;
+      continue;
+    }
+    if (line === "__declspec(allocator)") {
+      continue;
+    }
+    if (info.return_type === undefined) {
+      if (CONV_LIST.indexOf(line) >= 0) {
+        info.conv = line;
+        continue;
+      }
+      if (line === "(" || line === "return") return undefined;
+      info.return_type = line;
+    } else {
+      if (info.return_type === "*") {
+        info.return_type = line + info.return_type;
+        continue;
+      }
+
+      if (
+        PrimitiveTypesC.indexOf(line) >= 0 ||
+        PrimitiveTypePrefixes.indexOf(line) >= 0
+      ) {
+        info.return_type = line + " " + info.return_type;
+        continue;
       }
       break;
-    } else {
-      lines = split_return_type_lines(ba);
-      lines = join_pointers(lines);
-      let api_type = lines[lines.length - 1];
-      if (api_type === "FASTCALL") {
-        if (arch === "x86") {
-          return_conv = "__fastcall";
-        } else {
-          return_conv = "__cdecl";
-        }
-        return_type = lines[lines.length - 2];
-        break;
-      }
-
-      if (API_LIST_STDCALL.indexOf(api_type) >= 0) {
-        let inline_token = lines[lines.length - 3];
-        if (inline_token === "inline") {
-          break;
-        }
-        return_type = lines[lines.length - 2];
-        break;
-      }
-      if (API_LIST_CDECL.indexOf(api_type) >= 0) {
-        let inline_token = lines[lines.length - 3];
-        if (inline_token === "inline") {
-          break;
-        }
-        return_type = lines[lines.length - 2];
-        return_conv = "__cdecl";
-        break;
-      }
-      if (TYPE_LIST.indexOf(api_type) >= 0) {
-        return_conv = "__cdecl";
-        return_type = api_type;
-        break;
-      }
-      if (api_type.startsWith("STDAPI_(")) {
-        return_type = api_type.substring(
-          "STDAPI_(".length,
-          api_type.length - 1
-        );
-        break;
-      }
-      if (HRESULT_TYPE_LIST.indexOf(api_type) >= 0) {
-        return_type = "HRESULT";
-        break;
-      }
-      if (api_type.startsWith("NOT_BUILD_WINDOWS_DEPRECATE_NDFAPI_STDAPI(")) {
-        return_type = "HRESULT";
-        break;
-      }
-
-      if (api_type === "NETIOAPI_API") {
-        return_type = "NETIO_STATUS";
-        break;
-      }
-      if (api_type === "PFAPIENTRY") {
-        return_type = "DWORD";
-        break;
-      }
-      if (api_type === "PDH_FUNCTION") {
-        return_type = "PDH_STATUS";
-        break;
-      }
-      for (let i = 0; i < API_LIST_SUB.length; i += 1) {
-        let item = API_LIST_SUB[i];
-        if (api_type.startsWith(item)) {
-          if (i < 1) {
-            return_conv = "__cdecl";
-          }
-          return_type = api_type.substring(item.length, api_type.length - 1);
-          break;
-        }
-      }
-      // do not add more
     }
-  } while (0);
-  if (return_type === undefined) {
-    return undefined;
   }
-  return {
-    conv: return_conv,
-    type: return_type,
-  };
 }
 
-interface ParameterInfo {
-  firstChar: string;
-  tail: string;
-}
-
-async function find_function_tail(
-  key: string,
-  ba: string
-): Promise<ParameterInfo | undefined> {
+function find_function_tail(key: string, ba: string) {
   let OpenParenthesesCount = 0;
   let CloseParenthesesCount = 0;
-  let TailFound: string | undefined = undefined;
-  let firstCharNonSpace = "";
-  let i = 0;
-  ba = strip_comment(ba);
-  for (;;) {
+  ba = ba.replaceAll("const IID &", "REFIID");
+  ba = ba.replaceAll("const IID * const", "REFIID");
+  ba = ba.replaceAll("const GUID * const", "REFGUID");
+
+  ba = ba.replaceAll("const PROPVARIANT * const", "REFPROPVARIANT");
+  ba = ba.replaceAll("const VARIANT * const", "REFVARIANT");
+  ba = ba.replaceAll("const PROPERTYKEY * const", "REFPROPERTYKEY");
+  ba = ba.replaceAll("const KNOWNFOLDERID * const", "REFKNOWNFOLDERID");
+  let OpenParenthesesIndex = -1;
+
+  for (let i = 0; ; i += 1) {
     if (" \t\n\r\v".indexOf(ba[i]) < 0) {
-      if (ba[i] === "(" || ba[i] === ",") {
+      if (ba[i] === "(") {
         OpenParenthesesCount = 1;
-        firstCharNonSpace = ba[i];
-        i += 1;
-        break;
-      } else if (ba[i] === ")") {
-        OpenParenthesesCount = 0;
-        firstCharNonSpace = ba[i];
-        i += 1;
-        break;
+        OpenParenthesesIndex = i;
       }
-      return TailFound;
-    }
-    i += 1;
-  }
-  let beginOffset = i;
-  for (; i < ba.length; i += 1) {
-    if (ba[i] === "(") OpenParenthesesCount += 1;
-    if (ba[i] === ")") CloseParenthesesCount += 1;
-    if (
-      ba[i] === ";" ||
-      (OpenParenthesesCount > 0 &&
-        OpenParenthesesCount == CloseParenthesesCount)
-    ) {
-      if (ba[i] === ")") i += 1;
-      if (firstCharNonSpace == ")") {
-        TailFound = ba.substring(beginOffset, i);
-      } else {
-        TailFound = "(" + ba.substring(beginOffset, i);
+      if (ba[i] === ";") {
+        return ";";
       }
       break;
     }
-    if (ba[i] === "{" || ba[i] === "}") return undefined;
   }
-  if (
-    OpenParenthesesCount == CloseParenthesesCount &&
-    TailFound !== undefined
-  ) {
-    let TailFoundFinal = await handle_preprocess(TailFound);
-    TailFoundFinal = TailFoundFinal.trim();
-    if (TailFoundFinal.indexOf("&") >= 0) {
-      // console.warn(`${key} have &`)
-      return undefined;
+  let TailFound: string | undefined = undefined;
+  if (OpenParenthesesCount === 1) {
+    // only start with "(" need to be handled
+    for (let i = OpenParenthesesIndex + 1; i < ba.length; i += 1) {
+      if (ba[i] === "(") OpenParenthesesCount += 1;
+      if (ba[i] === ")") CloseParenthesesCount += 1;
+      if (OpenParenthesesCount > 1 || CloseParenthesesCount > 1) {
+        // console.log(`${key} with ParenthesesCount:${OpenParenthesesCount}`);
+        return undefined;
+      }
+
+      if (OpenParenthesesCount === CloseParenthesesCount) {
+        TailFound = ba.substring(OpenParenthesesIndex + 1, i);
+        break;
+      }
+
+      if (ba[i] === ";" || ba[i] === "{" || ba[i] === "}") {
+        // early exit
+        break;
+      }
     }
-    return {
-      firstChar: firstCharNonSpace,
-      tail: TailFoundFinal,
-    };
   }
-  return undefined;
+  return TailFound;
+}
+
+function ParseFunctionArgs(tailFound: string, info: FunctionInfo) {
+  if (tailFound === ";") {
+    // it's data
+    info.is_data = true;
+  } else {
+    info.is_data = false;
+    for (let arg of tailFound.split(",")) {
+      let argTrimmed = arg.trim();
+      if (argTrimmed.length === 0) continue;
+      if (argTrimmed === "void") continue;
+      let typeList = SplitType(argTrimmed);
+      let name: string = typeList.pop()!;
+      if (name === "]") {
+        typeList.pop();
+        name = typeList.pop()!;
+        typeList.push("[]");
+      } else if (name === "*") {
+        typeList.push(name);
+        name = "";
+      }
+      if (PrimitiveTypePrefixes.indexOf(typeList[typeList.length - 1]) >= 0) {
+        typeList.push(name);
+        name = "";
+      } else if (PrimitiveTypesC.indexOf(name) >= 0) {
+        typeList.push(name);
+        name = "";
+      } else if (typeList.length === 0) {
+        typeList.push(name);
+        name = "";
+      }
+
+      let typeFinal: string = typeList.join(" ");
+      let funcArg: FunctionArg = {
+        type: typeFinal,
+        name: name,
+      };
+      info.args?.push(funcArg);
+      info.argsMerged?.push(`${funcArg.type}`);
+      // info.argsMerged?.push(argTrimmed);
+    }
+  }
+  let args = info.args!;
+  if (args.length > 0 && args[args.length - 1].type === "...") {
+    info.is_vaarg = true;
+  }
+  info.body = `(${info.argsMerged?.join(", ")})`;
+}
+
+function ParseFunctionInfo(
+  dllname: string,
+  arch: "x86" | "x64",
+  sa: SuffixArrayLoaded,
+  sa_full: SuffixArrayLoaded,
+  key: string,
+  matchedIndex: number[]
+): FunctionInfo | undefined {
+  matchedIndex.sort((ia, ib) => {
+    let offsetA = sa.index[ia];
+    let offsetB = sa.index[ib];
+    return offsetA - offsetB;
+  });
+  let infos = [] as FunctionInfo[];
+  for (let i = 0; i < matchedIndex.length; i++) {
+    let indexFound = matchedIndex[i];
+    let offset = sa.index[indexFound];
+    let tailOffset = offset + key.length + 1;
+    if (key === "CreateThread") {
+      i += 0;
+    }
+    let suffix = sa.content.subarray(tailOffset, tailOffset + 4096).toString();
+    let prefix = sa.content.subarray(offset - 4096, offset).toString();
+    let tailFoundCurrent = find_function_tail(key, suffix);
+    if (tailFoundCurrent !== undefined) {
+      let info: Partial<FunctionInfo> = {
+        key: key,
+        has_dllexport: false,
+        has_dllimport: false,
+        is_vaarg: false,
+        is_data: false,
+        args: [],
+        argsMerged: [],
+        body: "",
+      };
+      ParseFunctionArgs(tailFoundCurrent, info as FunctionInfo);
+      find_function_ret_type(prefix, info);
+      infos.push(info as FunctionInfo);
+    }
+  }
+  function get_value(x: FunctionInfo) {
+    let v = 0;
+    if (x.has_dllexport || x.has_dllimport) {
+      v |= 1 << 0;
+    }
+    if (!x.is_data) {
+      v |= 1 << 1;
+    }
+    if (x.return_type !== undefined) {
+      v |= 1 << 2;
+    }
+    return v;
+  }
+  infos.sort((a, b) => {
+    return get_value(b) - get_value(a);
+  });
+  let info = infos[0];
+  if (info === undefined) {
+    let foundCount = 0;
+    for (let prefix_char of FunctionPrefixTable) {
+      for (let suffix_char of FunctionPrefixTable) {
+        let keyFull = `${String.fromCodePoint(
+          prefix_char
+        )}${key}${String.fromCodePoint(suffix_char)}`;
+        let keyToSearch = Buffer.from(keyFull);
+        let range = binary_search(sa_full, keyToSearch);
+        if (range.high >= range.low) {
+          foundCount += range.high - range.low + 1;
+        }
+      }
+    }
+    if (foundCount > 0) {
+      console.log(`Can not find function parameters for ${arch}:${key}`);
+    }
+    return undefined;
+  }
+  if (info.return_type === undefined) {
+    console.log(`Can not find return type for ${arch}:${key}`);
+    process.exit();
+  }
+  let declsepc = " ";
+  if (info.has_dllexport) {
+    declsepc = " __declspec(dllexport) ";
+  } else if (info.has_dllimport) {
+    declsepc = " __declspec(dllimport) ";
+  } else {
+    if (dllname === "ntdll") {
+      if (info.conv !== "__cdecl")
+        console.log(`no __declspec ntdll for ${arch}:${key}`);
+    } else {
+      if (arch === "x86") {
+        // TODO: make sure all function have __declspec(dllimport) when needed
+        // console.log(`no __declspec ntdll for ${arch}:${key}`);
+      }
+    }
+  }
+  if (info.is_data) {
+    info.decls = `EXTERN_C${declsepc}${info.return_type} ${key};`;
+  } else {
+    info.decls = `EXTERN_C${declsepc}${info.return_type} ${info.conv} ${key}${info.body};`;
+  }
+  return info as FunctionInfo;
 }
 
 interface MergeResult {
-  decls: string
-};
+  decls: string;
+}
 
 // DbgPrintReturnControlC not present in phnt
 async function exportFiles(
   mergeResult: MergeResult,
+  FunctionPrefixRange: SuffixArrayRange[],
   arch: "x86" | "x64",
   dllname: string,
-  gensDir: string,
+  gensDirArch: string,
   filesExports: string[],
   sa: SuffixArrayLoaded,
+  sa_full: SuffixArrayLoaded,
   keysToIgnore: Set<string>,
   keysToPushPop: string[]
 ) {
-  let funcMap = new Map<string, number>();
+  let funcCountMap = new Map<string, number>();
+  let funcMap = new Map<string, FunctionInfo>();
   let fileCount = 0;
   for (let f of filesExports) {
     let basename = path.basename(f);
@@ -622,9 +491,10 @@ async function exportFiles(
       for (let e of ExportList) {
         if (!e.ExportByOrdinal) {
           let trimFunc = e.Name.trim();
+          if (trimFunc.indexOf("@") >= 0) continue;
           if (trimFunc.length > 0) {
-            let oldCount = funcMap.get(trimFunc) ?? 0;
-            funcMap.set(trimFunc, oldCount + 1);
+            let oldCount = funcCountMap.get(trimFunc) ?? 0;
+            funcCountMap.set(trimFunc, oldCount + 1);
           }
         }
       }
@@ -633,10 +503,13 @@ async function exportFiles(
   if (fileCount <= 0)
     throw new Error(`The fileCount:${fileCount} for ${dllname} should >= 1`);
 
-  let allKeys = Array.from(funcMap.keys()).sort();
+  let allKeys = Array.from(funcCountMap.keys()).sort();
   for (const key of allKeys) {
-    const finalKey = (FallbackNames[key] ?? key) as string;
-    let keyBuffer = Buffer.from(finalKey, "utf-8");
+    if (keysToIgnore.has(key)) {
+      funcCountMap.set(key, 0);
+      continue;
+    }
+    let keyBuffer = Buffer.from(key, "utf-8");
     let matchedIndex = [] as number[];
     for (const prefixRange of FunctionPrefixRange) {
       let currentRange = prefixRange;
@@ -653,63 +526,40 @@ async function exportFiles(
         let offsetBegin = contentIndex + 1 + keyBuffer.length;
         let functionMatched =
           FunctionPrefixTable.indexOf(sa.content[offsetBegin]) >= 0;
-        let functionMatchedAnsi =
-          sa.content[offsetBegin] === AsciiCode_A &&
-          FunctionPrefixTable.indexOf(sa.content[offsetBegin + 1]) >= 0;
-        if (functionMatched || functionMatchedAnsi) {
+        if (functionMatched) {
           matchedIndex.push(i);
         }
       }
     }
-    if (keysToIgnore.has(key)) matchedIndex = [];
-    let tailFound: ParameterInfo | undefined;
-    let returnTypeFound: ReturnTypeInfo | undefined;
-    for (let i = 0; i < matchedIndex.length; i++) {
-      let indexFound = matchedIndex[i];
-      let offset = sa.index[indexFound];
-      let tailOffset = offset + keyBuffer.length + 1;
-      if (sa.content[tailOffset] === AsciiCode_A) {
-        tailOffset += 1;
+
+    const info = ParseFunctionInfo(
+      dllname,
+      arch,
+      sa,
+      sa_full,
+      key,
+      matchedIndex
+    );
+    if (info === undefined) {
+      if (matchedIndex.length > 0) {
+        console.log(`Can not find body for ${arch}:${key}`);
       }
-      //let matched = sa.content.subarray(offset - 5, tailOffset) as Buffer;
-      if (key === "SHPropStgReadMultiple") {
-        i += 0;
-      }
-      let suffix = sa.content
-        .subarray(tailOffset, tailOffset + 2048)
-        .toString();
-      let prefix = sa.content.subarray(offset - 256, offset).toString();
-      let tailFoundCurrent = await find_function_tail(key, suffix);
-      if (tailFoundCurrent !== undefined) {
-        tailFound = tailFoundCurrent;
-        returnTypeFound = find_function_ret_type(
-          arch,
-          prefix,
-          tailFoundCurrent.firstChar
-        );
-        if (returnTypeFound != undefined) break;
-      }
-    }
-    if (tailFound === undefined) {
-      funcMap.set(key, 0);
+      funcCountMap.set(key, 0);
     } else {
-      if (returnTypeFound === undefined) {
-        console.log(`Can not find return type for ${key}`);
-        process.exit();
-      }
-      // console.log(`${returnTypeFound}`);
-      mergeResult.decls = mergeResult.decls + `${returnTypeFound.type} ${returnTypeFound.conv} ${key}${tailFound.tail};\n`
+      funcMap.set(key, info);
+      mergeResult.decls = `${mergeResult.decls}${info.decls}\n`;
     }
   }
   let KeysJoin: string[] = [];
   let KeysDelta: string[] = [];
   for (let key of allKeys) {
     keysToPushPop.push(key);
-    let value = funcMap.get(key) ?? 0;
-    let define_thunks = "DEFINE_THUNK";
-    if (ExportData.indexOf(key) >= 0) define_thunks = "DEFINE_THUNK_DATA";
-    else if (VaArgApis.indexOf(key) >= 0) define_thunks = "DEFINE_THUNK_VAARG";
+    let value = funcCountMap.get(key) ?? 0;
     if (value > 0) {
+      let info = funcMap.get(key)!;
+      let define_thunks = "DEFINE_THUNK";
+      if (info.is_data) define_thunks = "DEFINE_THUNK_DATA";
+      else if (info.is_vaarg) define_thunks = "DEFINE_THUNK_VAARG";
       if (value == fileCount) {
         KeysJoin.push(`${define_thunks}(${dllname}, ${key})`);
       } else {
@@ -721,11 +571,11 @@ async function exportFiles(
   KeysJoin.push("");
   KeysDelta.push("");
   await fs.writeFile(
-    path.join(gensDir, `${dllname}_basic.h`),
+    path.join(gensDirArch, `${dllname}_basic.h`),
     KeysJoin.join("\r\n")
   );
   await fs.writeFile(
-    path.join(gensDir, `${dllname}_delta.h`),
+    path.join(gensDirArch, `${dllname}_delta.h`),
     KeysDelta.join("\r\n")
   );
 
@@ -734,13 +584,14 @@ async function exportFiles(
   KeysUnion.push(`#include "${dllname}_delta.h"`);
   KeysUnion.push("");
   await fs.writeFile(
-    path.join(gensDir, `${dllname}_full.h`),
+    path.join(gensDirArch, `${dllname}_full.h`),
     KeysUnion.join("\r\n")
   );
 }
 
 const baseDir = path.join(__dirname, "..");
 const docsDir = path.join(baseDir, "docs");
+const gensDir = path.join(baseDir, "gens");
 
 export async function genWin32Headers() {
   let pathNtDirs = path.join(baseDir, "..", "win-polyfill-phnt");
@@ -830,25 +681,34 @@ const DllNameList = [
   "zipfldr",
 ];
 
-async function MergeFile(sa: SuffixArrayLoaded, mergeResult: MergeResult, arch: "x86" | "x64") {
+async function MergeFile(
+  sa_full: SuffixArrayLoaded,
+  sa: SuffixArrayLoaded,
+  FunctionPrefixRange: SuffixArrayRange[],
+  mergeResult: MergeResult,
+  arch: "x86" | "x64"
+) {
   let keysToIgnore = new Set<string>(ApisToIgnore);
+
   let docsDirArch = path.join(docsDir, "gens", arch);
   let filesExports = await getFiles(docsDirArch);
-  let gensDir = path.join(baseDir, "gens", arch);
+  let gensDirArch = path.join(gensDir, arch);
   let keysToPushPop: string[] = [];
   for (let name of DllNameList) {
     await exportFiles(
       mergeResult,
+      FunctionPrefixRange,
       arch,
       name,
-      gensDir,
+      gensDirArch,
       filesExports,
       sa,
+      sa_full,
       keysToIgnore,
       keysToPushPop
     );
   }
-  let push_path = path.join(gensDir, `win32_api_push.h`);
+  let push_path = path.join(gensDirArch, `win32_api_push.h`);
   if (false)
     await fs.writeFile(
       push_path,
@@ -856,13 +716,12 @@ async function MergeFile(sa: SuffixArrayLoaded, mergeResult: MergeResult, arch: 
     );
   else await fs.rm(push_path, { force: true });
   await fs.writeFile(
-    path.join(gensDir, `win32_api_pop.h`),
+    path.join(gensDirArch, `win32_api_pop.h`),
     keysToPushPop.map((x) => `#undef ${x}`).join("\r\n")
   );
 }
 
 async function load(): Promise<SuffixArrayLoaded> {
-  // await genWin32Headers();
   let cacheDir = path.join(docsDir, "cache");
   let win32Headers = await fs.readFile(
     path.join(cacheDir, "win32-api-merged.h.txt")
@@ -879,18 +738,42 @@ async function load(): Promise<SuffixArrayLoaded> {
   return loaded;
 }
 
-async function allMerge() {
-  let sa = await load();
-  let range = { low: 0, high: sa.content.length - 1 };
+async function MergePreprocessorFile(
+  sa_full: SuffixArrayLoaded,
+  arch: "x86" | "x64"
+) {
+  let gensDirArch = path.join(gensDir, arch);
+  let su_content = await fs.readFile(
+    path.join(gensDirArch, "gen-exports-decls.h")
+  );
+  let su_index_raw = await fs.readFile(
+    path.join(gensDirArch, "gen-exports-decls.h.index.txt")
+  );
+  let su_index = new Uint32Array(su_index_raw.buffer);
+  let sa: SuffixArrayLoaded = {
+    index: su_index,
+    content: su_content,
+  };
+  const FunctionPrefixRange: SuffixArrayRange[] = [];
   for (let prefix_char of FunctionPrefixTable) {
+    let range = { low: 0, high: sa.content.length - 1 };
     FunctionPrefixRange.push(binary_search_range(sa, prefix_char, 0, range));
   }
   let mergeResult: MergeResult = {
-    decls: ''
+    decls: "",
   };
-  // await MergeFile(sa, "x86");
-  await MergeFile(sa, mergeResult, "x64");
-  await fs.writeFile('decs.c', mergeResult.decls)
+  await MergeFile(sa_full, sa, FunctionPrefixRange, mergeResult, arch);
+  await fs.writeFile(
+    path.join(gensDirArch, "gen-exports-decls.inc.h"),
+    mergeResult.decls
+  );
 }
 
-allMerge();
+async function allMergePreproces() {
+  // await genWin32Headers();
+  let sa_full = await load();
+  await MergePreprocessorFile(sa_full, "x86");
+  await MergePreprocessorFile(sa_full, "x64");
+}
+
+allMergePreproces();

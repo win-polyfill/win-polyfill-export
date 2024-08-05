@@ -8,7 +8,6 @@
 #endif
 
 #define _WINSOCKAPI_
-#define PSAPI_VERSION 1
 
 #define INITKNOWNFOLDERS
 
@@ -50,37 +49,29 @@
 #define PATHCCH_NO_DEPRECATE
 #include <pathcch.h>
 
-#include <d3d9.h>
-#include <d3dhal.h>
-
-#include <d3d11.h>
-#include <d3d12.h>
-#include <windows.graphics.directx.direct3d11.interop.h>
-#include <dxgi.h>
-#include <dxgi1_3.h>
-#include <dxgi1_6.h>
-#include <dxva2api.h>
-#include <d3d11on12.h>
-#include <d3d9on12.h>
-
 #include <bcrypt.h>
 #include <bluetoothapis.h>
 #include <bluetoothleapis.h>
 #include <cfgmgr32.h>
+#include <d3d11.h>
+#include <d3d11on12.h>
+#include <d3d12.h>
+#include <d3d9.h>
+#include <d3d9on12.h>
+#include <d3dhal.h>
 #include <dbghelp.h>
 #include <dpapi.h>
 #include <dwmapi.h>
+#include <dxgi.h>
+#include <dxgi1_3.h>
+#include <dxgi1_6.h>
+#include <dxva2api.h>
 #include <esent.h>
 #include <evntprov.h>
 #include <evntrace.h>
-#include <mschapp.h>
 #include <ndfapi.h>
 #include <powrprof.h>
 #include <processthreadsapi.h>
-#define CINTERFACE
-#include <propvarutil.h>
-#undef CINTERFACE
-#include <psapi.h>
 #include <roapi.h>
 #include <roerrorapi.h>
 #include <setupapi.h>
@@ -95,12 +86,29 @@
 #include <userenv.h>
 #include <uxtheme.h>
 #include <werapi.h>
+#include <windows.graphics.directx.direct3d11.interop.h>
 #include <winevt.h>
 #include <winhttp.h>
 #include <winnls.h>
 #include <winstring.h>
 #include <winusb.h>
+
 #ifdef __cplusplus
 #include <dwrite.h>
 #include <dwrite_3.h>
 #endif
+
+#define CINTERFACE
+EXTERN_C_START
+#include <mschapp.h>
+#include <propvarutil.h>
+EXTERN_C_END
+#undef CINTERFACE
+
+#define PSAPI_VERSION 1
+#include <psapi.h>
+
+#undef _PSAPI_H_
+#undef PSAPI_VERSION
+#define PSAPI_VERSION 2
+#include <psapi.h>

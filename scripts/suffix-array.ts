@@ -1,11 +1,9 @@
 ﻿// https://www.geeksforgeeks.org/suffix-array-set-2-a-nlognlogn-algorithm/#
 
-import { off } from "process";
-
 // TODO: Use radix sort to improve speed
 // Do not support for big array
 
-class SuffixArray {
+export class SuffixArray {
   s: Uint8Array;
   n: number;
   su_body: Uint32Array;
@@ -45,6 +43,7 @@ class SuffixArray {
   // of size n as an argument, builds and return the
   // suffix array for the given string
   init_le() {
+    let beginTime = Date.now()
     let prev = 0;
     for (let i = this.n - 1; i >= 0; --i) {
       this.su_index[i] = i;
@@ -69,6 +68,7 @@ class SuffixArray {
     // from original index. This mapping is needed to get
     // next suffix.
     for (let length = 4; length < 2 * this.n; length <<= 1) {
+      console.log(`Create SuffixArray for length:${length} at ${(Date.now() - beginTime) / 1000.0}`)
       // Assigning rank and index values to first suffix
       let rank = 0;
       // let prev = su[0].rank;

@@ -18,7 +18,7 @@ SHSTDAPI_(BOOL) SHGetPathFromIDList(_In_ PCIDLIST_ABSOLUTE pidl, _Out_writes_(MA
 
 SHSTDAPI SHLoadOLE(LPARAM lParam);
 SHSTDAPI_(LONG) PathProcessCommand(_In_ PCWSTR pszSrc, _Out_writes_(cchDest) PWSTR pszDest, int cchDest, DWORD dwFlags);
-SHSTDAPI_(PIDLIST_ABSOLUTE) ILCreateFromPath(_In_ PCTSTR pszPath);
+SHSTDAPI_(PIDLIST_ABSOLUTE) ILCreateFromPath(_In_ PCSTR pszPath);
 SHSTDAPI_(BOOL) IsLFNDrive(_In_opt_ LPCSTR pszPath);
 SHSTDAPI_(PIDLIST_ABSOLUTE) SHBrowseForFolder(_In_ LPBROWSEINFOA lpbi);
 SHSTDAPI_(int) SHFileOperation(_Inout_ LPSHFILEOPSTRUCTA lpFileOp);

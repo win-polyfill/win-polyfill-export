@@ -5700,6 +5700,7 @@ EtwEventWriteString(
     _In_ PCWSTR String
     );
 
+NTSYSAPI
 ULONG
 NTAPI
 EtwEventWriteEx(
@@ -5743,6 +5744,7 @@ EtwWriteUMSecurityEvent(
     _In_opt_ PEVENT_DATA_DESCRIPTOR UserData
     );
 
+NTSYSAPI
 ULONG
 NTAPI
 EtwEventWriteNoRegistration(

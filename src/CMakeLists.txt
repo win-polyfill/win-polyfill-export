@@ -30,6 +30,8 @@ add_executable(gen-exports
   gen-exports.cpp
   gen-exports-api.cpp
   gen-exports-function-info.cpp
+  gen-exports-compile.c
+  gen-exports-compile.cpp
 )
 
 target_link_libraries(gen-exports win-polyfill-deps)
