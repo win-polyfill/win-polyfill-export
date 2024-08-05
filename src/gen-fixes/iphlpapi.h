@@ -4,8 +4,7 @@
 
 #include "win32_api_pop.h"
 
-extern "C"
-{
+EXTERN_C_START
 
 DWORD
 AllocateAndGetTcpExTableFromStack(
@@ -24,4 +23,5 @@ AllocateAndGetUdpExTableFromStack(
     _In_        DWORD         dwFlags,
     _In_        DWORD         dwFamily
     );
-}
+
+EXTERN_C_END

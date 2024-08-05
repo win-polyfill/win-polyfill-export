@@ -4,8 +4,7 @@
 
 #include "win32_api_pop.h"
 
-extern "C"
-{
+EXTERN_C_START
 
 VOID
 WINAPI
@@ -49,4 +48,4 @@ SetupScanFileQueue(
     _Out_ PDWORD Result
     );
 
-}
+EXTERN_C_END

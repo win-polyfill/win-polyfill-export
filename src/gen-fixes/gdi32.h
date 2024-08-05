@@ -4,8 +4,7 @@
 
 #include "win32_api_pop.h"
 
-extern "C"
-{
+EXTERN_C_START
 
 WINGDIAPI DWORD WINAPI GetGlyphOutline(
     _In_ HDC hdc,
@@ -21,4 +20,4 @@ WINGDIAPI DWORD WINAPI GetKerningPairs(
     _In_ DWORD nPairs,
     _Out_writes_to_opt_(nPairs, return) LPKERNINGPAIR lpKernPair);
 
-}
+EXTERN_C_END

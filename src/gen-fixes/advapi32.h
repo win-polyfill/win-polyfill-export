@@ -4,8 +4,7 @@
 
 #include "win32_api_pop.h"
 
-extern "C"
-{
+EXTERN_C_START
 
 WINADVAPI
 DWORD
@@ -16,4 +15,4 @@ NotifyServiceStatusChange (
     _In_        PSERVICE_NOTIFYA        pNotifyBuffer
     );
 
-}
+EXTERN_C_END

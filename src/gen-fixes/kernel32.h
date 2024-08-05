@@ -4,8 +4,7 @@
 
 #include "win32_api_pop.h"
 
-extern "C"
-{
+EXTERN_C_START
 
 WINBASEAPI
 BOOL
@@ -137,4 +136,4 @@ InterlockedPushListSList(
     _In_ ULONG Count
     );
 
-}
+EXTERN_C_END

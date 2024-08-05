@@ -4,8 +4,7 @@
 
 #include "win32_api_pop.h"
 
-extern "C"
-{
+EXTERN_C_START
 
 SHSTDAPI_(UINT) DragQueryFile(_In_ HDROP hDrop, _In_ UINT iFile, _Out_writes_opt_(cch) LPSTR lpszFile, _In_ UINT cch);
 SHSTDAPI_(UINT) ExtractIconEx(_In_ LPCSTR lpszFile, int nIconIndex, _Out_writes_opt_(nIcons) HICON *phiconLarge, _Out_writes_opt_(nIcons) HICON *phiconSmall, UINT nIcons);
@@ -27,4 +26,4 @@ SHSTDAPI_(int) SHFileOperation(_Inout_ LPSHFILEOPSTRUCTA lpFileOp);
 SHSTDAPI_(BOOL) ShellExecuteEx(_Inout_ SHELLEXECUTEINFOA *pExecInfo);
 SHSTDAPI_(BOOL) Shell_NotifyIcon(DWORD dwMessage, _In_ PNOTIFYICONDATAA lpData);
 
-}
+EXTERN_C_END

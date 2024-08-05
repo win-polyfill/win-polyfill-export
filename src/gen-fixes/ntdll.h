@@ -4,7 +4,7 @@
 
 #include "win32_api_pop.h"
 
-extern "C" {
+EXTERN_C_START
 
 _Check_return_ int __cdecl abs(_In_ int _X);
 
@@ -52,4 +52,5 @@ _VCRTIMP wchar_t _CONST_RETURN* __cdecl wcsstr(
     _In_z_ wchar_t const* _Str,
     _In_z_ wchar_t const* _SubStr
     );
-}
+
+EXTERN_C_END

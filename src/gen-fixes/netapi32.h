@@ -4,8 +4,8 @@
 
 #include "win32_api_pop.h"
 
-extern "C"
-{
+EXTERN_C_START
+
 #if defined(_X86_)
 DSGETDCAPI
 DWORD
@@ -38,4 +38,4 @@ DsGetDcClose(
     _In_ HANDLE GetDcContextHandle
     );
 
-}
+EXTERN_C_END

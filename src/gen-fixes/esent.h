@@ -4,8 +4,7 @@
 
 #include "win32_api_pop.h"
 
-extern "C"
-{
+EXTERN_C_START
 
 JET_ERR JET_API
 JetAddColumn(
@@ -495,4 +494,5 @@ JetOSSnapshotGetFreezeInfo(
     _Out_ JET_UINT32 *                                                pcInstanceInfo,
     _Outptr_result_buffer_( *pcInstanceInfo ) JET_INSTANCE_INFO_A **  paInstanceInfo,
     _In_ const JET_GRBIT                                              grbit );
-}
+
+EXTERN_C_END

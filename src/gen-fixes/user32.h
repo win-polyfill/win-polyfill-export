@@ -4,8 +4,7 @@
 
 #include "win32_api_pop.h"
 
-extern "C"
-{
+EXTERN_C_START
 
 WINUSERAPI
 long
@@ -88,4 +87,4 @@ SystemFunction041(
     _In_ ULONG OptionFlags
     );
 
-}
+EXTERN_C_END

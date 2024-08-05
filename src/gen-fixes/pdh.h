@@ -5,8 +5,8 @@
 
 #include "win32_api_pop.h"
 
-extern "C"
-{
+EXTERN_C_START
+
 PDH_FUNCTION
 PdhOpenQuery(
     _In_opt_ LPCSTR       szDataSource,
@@ -14,4 +14,4 @@ PdhOpenQuery(
     _Out_    PDH_HQUERY * phQuery
 );
 
-}
+EXTERN_C_END
