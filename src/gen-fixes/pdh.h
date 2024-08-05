@@ -3,8 +3,6 @@
 #include <windows.h>
 #include <pdh.h>
 
-#include "win32_api_pop.h"
-
 EXTERN_C_START
 
 PDH_FUNCTION

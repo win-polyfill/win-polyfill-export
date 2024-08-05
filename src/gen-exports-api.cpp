@@ -2,8 +2,6 @@
 
 #include "gen-exports.h"
 
-
-#define abs abs_none
 #include <type_traits>
 #include <typeinfo>
 

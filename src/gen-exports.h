@@ -4,12 +4,6 @@
 #define WINNT
 #define WIN_NOEXCEPT_UNDEF
 
-#define _CRT_FUNCTIONS_REQUIRED 1
-#define _STL_COMPILER_PREPROCESSOR 1
-#define _NO_CRT_STDIO_INLINE
-#define _CTYPE_DISABLE_MACROS
-#define _CRT_SECURE_CPP_OVERLOAD_SECURE_NAMES 0
-
 #define DECLSPEC_NORETURN
 #define WINBASE_DECLARE_RESTORE_LAST_ERROR
 #define FE_IME
@@ -18,6 +12,7 @@
 #define PHNT_RTL_BYTESWAP
 #define PHNT_ENABLE_ALL
 
+#ifdef __cplusplus
 #define abs abs_none
 #define memchr memchr_none
 #define strchr strchr_none
@@ -28,6 +23,16 @@
 #define wcspbrk wcspbrk_none
 #define wcsrchr wcsrchr_none
 #define wcsstr wcsstr_none
+#endif
+
+#define _CRT_FUNCTIONS_REQUIRED 1
+#define _CRT_SECURE_CPP_OVERLOAD_SECURE_NAMES 0
+#define _CTYPE_DISABLE_MACROS
+#define _NO_CRT_STDIO_INLINE
+#define _STL_COMPILER_PREPROCESSOR 1
+
+// exclude <cstdlib> for avoid abs inline function
+#define _CSTDLIB_
 
 #include <sal.h>
 
@@ -35,6 +40,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 
 #define NTSTATUS_DEFINED
 typedef enum : int32_t
@@ -135,6 +141,5 @@ typedef struct _VIDMEM FAR *LPVIDMEM;
 #include <dsgetdc.h>
 #include <dsrole.h>
 #include <icmpapi.h>
-
 
 #include "gen-exports-fixes.h"

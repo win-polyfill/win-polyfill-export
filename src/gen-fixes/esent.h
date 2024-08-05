@@ -1,8 +1,7 @@
 #pragma once
 
 #include <windows.h>
-
-#include "win32_api_pop.h"
+#include <esent.h>
 
 EXTERN_C_START
 

@@ -2,8 +2,6 @@
 
 #include <windows.h>
 
-#include "win32_api_pop.h"
-
 EXTERN_C_START
 
 VOID
