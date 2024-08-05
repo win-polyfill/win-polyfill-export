@@ -1,4 +1,7 @@
-#include "gen-exports-api.h"
+#include <stdio.h>
+#include <string>
+
+#include "gen-exports-function-info.h"
 
 void write(FILE *f, const std::string &str) { fwrite(str.data(), 1, str.size(), f); }
 
@@ -18,17 +21,18 @@ void write_argument(FILE *f, const FunctionInfo &func, int i)
         const std::string enum_prefix = "enum ";
         auto enum_prefix_size = enum_prefix.size();
         bool is_enum = false;
-        if (arg.name.size() >= enum_prefix_size)
+        std::string name = arg.name;
+        if (name.size() >= enum_prefix_size)
         {
-            is_enum = memcmp(arg.name.data(), enum_prefix.data(), enum_prefix_size) == 0;
+            is_enum = memcmp(name.data(), enum_prefix.data(), enum_prefix_size) == 0;
         }
         if (is_enum)
         {
-            write(f, arg.name.c_str() + enum_prefix_size);
+            write(f, name.c_str() + enum_prefix_size);
         }
         else
         {
-            write(f, arg.name);
+            write(f, name);
         }
     }
     if (i == 0)
@@ -94,13 +98,13 @@ int main(void)
         fprintf(
             f_thunks,
             "__DEFINE_THUNKS_FUNC_SIZE(%s, %s, %s, %d)\n",
-            func.ModuleName.c_str(),
+            func.ModuleName,
             get_call_conv(func.CallingConventionId),
-            func.FunctionName.c_str(),
+            func.FunctionName,
             total_size);
 
-        fprintf(f, "wp_%s", func.FunctionName.c_str());
-        fprintf(f_def, "    wp_%s\n", func.FunctionName.c_str());
+        fprintf(f, "wp_%s", func.FunctionName);
+        fprintf(f_def, "    wp_%s\n", func.FunctionName);
         auto sz = func.ArgTypes.size();
         write(f, "(");
         switch (sz)
@@ -123,8 +127,8 @@ int main(void)
         fprintf(
             f,
             "    auto pfn = (decltype(&wp_%s))get_function(&functions.%s);\n",
-            func.FunctionName.c_str(),
-            func.FunctionName.c_str());
+            func.FunctionName,
+            func.FunctionName);
         fprintf(f, "    return pfn(");
         switch (sz)
         {

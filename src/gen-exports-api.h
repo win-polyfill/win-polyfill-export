@@ -1,32 +1,24 @@
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <typeinfo>
-#include <vector>
+#include <stdint.h>
 
 #pragma once
 
 struct ArtTypeInfo
 {
-    std::string name;
-    std::string raw_name;
+    const char *name;
+    const char *raw_name;
     size_t size;
     size_t alignment;
     bool is_pointer;
     int8_t function_id;
 };
 
-struct FunctionInfo
-{
-    std::string ModuleName;
-    std::string FunctionName;
-    // 0 cdecl 1 stdcall
-    int CallingConventionId;
+struct FunctionInfo;
 
-    // 0 is the return type, 1..N is arguments
-    std::vector<ArtTypeInfo> ArgTypes;
-};
+struct FunctionInfo *function_info_alloca(
+    const char *module_name,
+    const char *function_name,
+    int CallingConventionId);
 
-extern std::vector<FunctionInfo> module_functions;
+void function_info_add_parameter(struct FunctionInfo *, ArtTypeInfo *info);
 
 void gen_functions();

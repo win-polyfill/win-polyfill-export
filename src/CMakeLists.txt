@@ -26,6 +26,11 @@ target_link_options(one-core-linker PRIVATE
   onecoreuap_apiset.lib
 )
 
-add_executable(gen-exports gen-exports.cpp gen-exports-api.cpp)
+add_executable(gen-exports
+  gen-exports.cpp
+  gen-exports-api.cpp
+  gen-exports-function-info.cpp
+)
+
 target_link_libraries(gen-exports win-polyfill-deps)
 target_compile_options(gen-exports PRIVATE -Oi- -bigobj)
