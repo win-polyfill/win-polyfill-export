@@ -17,6 +17,7 @@
 #ifndef UMDF_USING_NTSTATUS
 #define UMDF_USING_NTSTATUS
 #endif
+#define DECLSPEC_CHPE_GUEST RPCRTAPI
 
 // winsock2 will include windows.h
 #include <winsock2.h>

@@ -48,10 +48,11 @@
 
 // The COM apis should at the beggning
 #define RPCPROXY_ENABLE_CPP_NO_CINTERFACE
-#include <callobj.h>
-#include <messagedispatcherapi.h>
 #include <rpcproxy.h>
+
+#include <callobj.h>
 #include <guiddef.h>
+#include <messagedispatcherapi.h>
 
 // dxva2
 #include <dxvahd.h>
