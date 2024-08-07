@@ -29,6 +29,7 @@ DsGetDcNext(
     _Outptr_opt_result_nullonfailure_ LPSTR *DnsHostName
     );
 #endif
+
 DSGETDCAPI
 VOID
 WINAPI
