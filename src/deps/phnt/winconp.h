@@ -175,12 +175,14 @@ typedef struct _CONSOLE_GRAPHICS_BUFFER_INFO {
 
 #endif
 
+WINBASEAPI
 BOOL
 WINAPI
 InvalidateConsoleDIBits(
     _In_ HANDLE hConsoleOutput,
     _In_ PSMALL_RECT lpRect);
 
+WINBASEAPI
 VOID
 WINAPI
 SetLastConsoleEventActive(
@@ -195,13 +197,14 @@ SetLastConsoleEventActive(
 #define VDM_FULLSCREEN_NOPAINT  7
 #define VDM_SET_VIDEO_MODE      8
 
+WINBASEAPI
 BOOL
 WINAPI
 VDMConsoleOperation(
     _In_ DWORD iFunction,
     _Inout_opt_ LPVOID lpData);
 
-
+WINBASEAPI
 BOOL
 WINAPI
 SetConsoleIcon(
@@ -212,12 +215,14 @@ SetConsoleIcon(
 // should be removed.
 //
 
+WINBASEAPI
 BOOL
 WINAPI
 SetConsoleFont(
     _In_ HANDLE hConsoleOutput,
     _In_ DWORD nFont);
 
+WINBASEAPI
 DWORD
 WINAPI
 GetConsoleFontInfo(
@@ -226,23 +231,27 @@ GetConsoleFontInfo(
     _In_ DWORD nLength,
     _Out_ PCONSOLE_FONT_INFO lpConsoleFontInfo);
 
+WINBASEAPI
 DWORD
 WINAPI
 GetNumberOfConsoleFonts(
     VOID);
 
+WINBASEAPI
 BOOL
 WINAPI
 SetConsoleCursor(
     _In_ HANDLE hConsoleOutput,
     _In_ HCURSOR hCursor);
 
+WINBASEAPI
 int
 WINAPI
 ShowConsoleCursor(
     _In_ HANDLE hConsoleOutput,
     _In_ BOOL bShow);
 
+WINBASEAPI
 HMENU
 APIENTRY
 ConsoleMenuControl(
@@ -250,6 +259,7 @@ ConsoleMenuControl(
     _In_ UINT dwCommandIdLow,
     _In_ UINT dwCommandIdHigh);
 
+WINBASEAPI
 BOOL
 SetConsolePalette(
     _In_ HANDLE hConsoleOutput,
@@ -260,6 +270,7 @@ SetConsolePalette(
 #define CONSOLE_REGISTER_VDM   1
 #define CONSOLE_REGISTER_WOW   2
 
+WINBASEAPI
 BOOL
 APIENTRY
 RegisterConsoleVDM(
@@ -273,6 +284,7 @@ RegisterConsoleVDM(
     _In_opt_ COORD VDMBufferSize,
     _Outptr_ PVOID *lpVDMBuffer);
 
+WINBASEAPI
 BOOL
 APIENTRY
 GetConsoleHardwareState(
@@ -280,6 +292,7 @@ GetConsoleHardwareState(
     _Out_ PCOORD lpResolution,
     _Out_ PCOORD lpFontSize);
 
+WINBASEAPI
 BOOL
 APIENTRY
 SetConsoleHardwareState(
@@ -305,6 +318,7 @@ typedef struct _APPKEY {
 #define CONSOLE_MODIFIER_CONTROL    0x0004   // Either Control shift key
 #define CONSOLE_MODIFIER_ALT        0x0008   // Either Alt shift key
 
+WINBASEAPI
 BOOL
 APIENTRY
 SetConsoleKeyShortcuts(
@@ -313,15 +327,19 @@ SetConsoleKeyShortcuts(
     _In_reads_(dwNumAppKeys) LPAPPKEY lpAppKeys,
     _In_ DWORD dwNumAppKeys);
 
+WINBASEAPI
 BOOL
 APIENTRY
 SetConsoleMenuClose(
     _In_ BOOL bEnable);
 
+WINBASEAPI
 DWORD
 GetConsoleInputExeNameA(
     _In_ DWORD nBufferLength,
     _Out_writes_(nBufferLength) LPSTR lpBuffer);
+
+WINBASEAPI
 DWORD
 GetConsoleInputExeNameW(
     _In_ DWORD nBufferLength,
@@ -332,9 +350,12 @@ GetConsoleInputExeNameW(
 #define GetConsoleInputExeName  GetConsoleInputExeNameA
 #endif // !UNICODE
 
+WINBASEAPI
 BOOL
 SetConsoleInputExeNameA(
     _In_ LPSTR lpExeName);
+
+WINBASEAPI
 BOOL
 SetConsoleInputExeNameW(
     _In_ LPWSTR lpExeName);
@@ -344,6 +365,7 @@ SetConsoleInputExeNameW(
 #define SetConsoleInputExeName  SetConsoleInputExeNameA
 #endif // !UNICODE
 
+WINBASEAPI
 BOOL
 WINAPI
 ReadConsoleInputExA(
@@ -352,6 +374,8 @@ ReadConsoleInputExA(
     _In_ DWORD nLength,
     _Out_ LPDWORD lpNumberOfEventsRead,
     _In_ USHORT wFlags);
+
+WINBASEAPI
 BOOL
 WINAPI
 ReadConsoleInputExW(
@@ -366,6 +390,7 @@ ReadConsoleInputExW(
 #define ReadConsoleInputEx  ReadConsoleInputExA
 #endif // !UNICODE
 
+WINBASEAPI
 BOOL
 WINAPI
 WriteConsoleInputVDMA(
@@ -373,6 +398,8 @@ WriteConsoleInputVDMA(
     _In_reads_(nLength) PINPUT_RECORD lpBuffer,
     _In_ DWORD nLength,
     _Out_ LPDWORD lpNumberOfEventsWritten);
+
+WINBASEAPI
 BOOL
 WINAPI
 WriteConsoleInputVDMW(
@@ -386,19 +413,21 @@ WriteConsoleInputVDMW(
 #define WriteConsoleInputVDM  WriteConsoleInputVDMA
 #endif // !UNICODE
 
-
+WINBASEAPI
 BOOL
 APIENTRY
 GetConsoleNlsMode(
     _In_ HANDLE hConsole,
     _Out_ PDWORD lpdwNlsMode);
 
+WINBASEAPI
 BOOL
 APIENTRY
 SetConsoleNlsMode(
     _In_ HANDLE hConsole,
     _In_ DWORD fdwNlsMode);
 
+WINBASEAPI
 BOOL
 APIENTRY
 GetConsoleCharType(
@@ -410,6 +439,7 @@ GetConsoleCharType(
 #define CHAR_TYPE_LEADING  2   // Displayed leading byte of DBCS
 #define CHAR_TYPE_TRAILING 3   // Displayed trailing byte of DBCS
 
+WINBASEAPI
 BOOL
 APIENTRY
 SetConsoleLocalEUDC(
@@ -418,6 +448,7 @@ SetConsoleLocalEUDC(
     _In_ COORD  cFontSize,
     _In_ PCHAR  lpSB);
 
+WINBASEAPI
 BOOL
 APIENTRY
 SetConsoleCursorMode(
@@ -425,6 +456,7 @@ SetConsoleCursorMode(
     _In_ BOOL   Blink,
     _In_ BOOL   DBEnable);
 
+WINBASEAPI
 BOOL
 APIENTRY
 GetConsoleCursorMode(
@@ -432,16 +464,19 @@ GetConsoleCursorMode(
     _Out_ PBOOL  pbBlink,
     _Out_ PBOOL  pbDBEnable);
 
+WINBASEAPI
 BOOL
 APIENTRY
 RegisterConsoleOS2(
     _In_ BOOL fOs2Register);
 
+WINBASEAPI
 BOOL
 APIENTRY
 SetConsoleOS2OemFormat(
     _In_ BOOL fOs2OemFormat);
 
+WINBASEAPI
 BOOL
 IsConsoleFullWidth(
     _In_ HDC hDC,
@@ -449,12 +484,14 @@ IsConsoleFullWidth(
     _In_ WCHAR wch);
 
 #if defined(FE_IME)
+WINBASEAPI
 BOOL
 APIENTRY
 RegisterConsoleIME(
     _In_ HWND  hWndConsoleIME,
     _Out_opt_ DWORD *lpdwConsoleThreadId);
 
+WINBASEAPI
 BOOL
 APIENTRY
 UnregisterConsoleIME(
@@ -493,6 +530,7 @@ UnregisterConsoleIME(
 // subsystems (i.e. OpenFile routes to OpenConsoleW).
 //
 
+WINBASEAPI
 HANDLE
 APIENTRY
 OpenConsoleW(
@@ -501,6 +539,7 @@ OpenConsoleW(
     _In_ BOOL bInheritHandle,
     _In_ DWORD dwShareMode);
 
+WINBASEAPI
 HANDLE
 APIENTRY
 DuplicateConsoleHandle(
@@ -509,12 +548,14 @@ DuplicateConsoleHandle(
     _In_ BOOL bInheritHandle,
     _In_ DWORD dwOptions);
 
+WINBASEAPI
 BOOL
 APIENTRY
 GetConsoleHandleInformation(
     _In_ HANDLE hObject,
     _Out_ LPDWORD lpdwFlags);
 
+WINBASEAPI
 BOOL
 APIENTRY
 SetConsoleHandleInformation(
@@ -522,16 +563,19 @@ SetConsoleHandleInformation(
     _In_ DWORD dwMask,
     _In_ DWORD dwFlags);
 
+WINBASEAPI
 BOOL
 APIENTRY
 CloseConsoleHandle(
     _In_ HANDLE hConsole);
 
+WINBASEAPI
 BOOL
 APIENTRY
 VerifyConsoleIoHandle(
     _In_ HANDLE hIoHandle);
 
+WINBASEAPI
 HANDLE
 APIENTRY
 GetConsoleInputWaitHandle(
