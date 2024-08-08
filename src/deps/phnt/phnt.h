@@ -66,8 +66,8 @@ extern "C" {
 
 #include <ntwow64.h>
 
+#include <ntlsa.h>
 #include <ntsecapi.h>
-#include "ntlsa.h"
 
 #include <ntsam.h>
 
